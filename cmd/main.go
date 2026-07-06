@@ -8,6 +8,7 @@ import (
 	"github.com/manciniraka/urbioxe/database"
 	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/router"
+	"github.com/manciniraka/urbioxe/internal/validator"
 )
 
 func main() {
@@ -19,7 +20,13 @@ func main() {
 
 	e := echo.New()
 
-	router.InitRouter(e)
+	e.Validator = validator.New()
+
+	router.InitRouter(
+		e,
+		db,
+		cfg,
+	)
 
 	log.Printf("Starting ubioxe API...")
 	log.Printf("ubioxe server running on :%s\n", cfg.AppPort)

@@ -49,6 +49,7 @@ CREATE TYPE news_scope AS ENUM (
 CREATE TABLE districts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
 
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -59,6 +60,7 @@ CREATE TABLE departments (
     name VARCHAR(100) NOT NULL,
     code VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
 
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -67,6 +69,7 @@ CREATE TABLE departments (
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     home_district_id UUID REFERENCES districts(id),
+    nik CHAR(16) UNIQUE NOT NULL CHECK (nik ~ '^[0-9]{16}$'),
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -94,6 +97,7 @@ CREATE TABLE categories (
     department_id UUID NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
     name VARCHAR(100) NOT NULL,
     description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
 
     CONSTRAINT uq_category_department UNIQUE(department_id,name),
 
