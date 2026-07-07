@@ -1,5 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 CREATE TYPE user_role AS ENUM (
     'citizen',
     'officer',
@@ -47,7 +45,7 @@ CREATE TYPE news_scope AS ENUM (
 );
 
 CREATE TABLE districts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
 
@@ -56,7 +54,7 @@ CREATE TABLE districts (
 );
 
 CREATE TABLE departments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     code VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
@@ -67,8 +65,8 @@ CREATE TABLE departments (
 );
 
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    home_district_id UUID REFERENCES districts(id),
+    id BIGSERIAL PRIMARY KEY,
+    home_district_id BIGINT REFERENCES districts(id),
     nik CHAR(16) UNIQUE NOT NULL CHECK (nik ~ '^[0-9]{16}$'),
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
@@ -81,9 +79,9 @@ CREATE TABLE users (
 );
 
 CREATE TABLE staff_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    department_id UUID NOT NULL REFERENCES departments(id),
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGSERIAL UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    department_id BIGSERIAL NOT NULL REFERENCES departments(id),
     employee_number VARCHAR(50) UNIQUE NOT NULL,
     position staff_position,
     is_active BOOLEAN DEFAULT TRUE,
@@ -93,8 +91,8 @@ CREATE TABLE staff_profiles (
 );
 
 CREATE TABLE categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    department_id UUID NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
+    id BIGSERIAL PRIMARY KEY,
+    department_id BIGSERIAL NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
@@ -106,11 +104,11 @@ CREATE TABLE categories (
 );
 
 CREATE TABLE reports (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id),
-    category_id UUID NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
-    incident_district_id UUID NOT NULL REFERENCES districts(id),
-    assigned_staff_id UUID REFERENCES staff_profiles(id),
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGSERIAL NOT NULL REFERENCES users(id),
+    category_id BIGSERIAL NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    incident_district_id BIGSERIAL NOT NULL REFERENCES districts(id),
+    assigned_staff_id BIGINT REFERENCES staff_profiles(id),
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     report_number VARCHAR(50) UNIQUE,
@@ -127,8 +125,8 @@ CREATE TABLE reports (
 );
 
 CREATE TABLE report_attachments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    report_id BIGSERIAL NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
     file_url TEXT NOT NULL,
     type attachment_type NOT NULL,
 
@@ -136,36 +134,36 @@ CREATE TABLE report_attachments (
 );
 
 CREATE TABLE report_histories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    report_id UUID NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    report_id BIGSERIAL NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
     status report_status NOT NULL,
     notes TEXT,
     is_internal BOOLEAN DEFAULT FALSE,
-    actor_id UUID REFERENCES users(id),
+    actor_id BIGINT REFERENCES users(id),
 
     created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE regional_news (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    department_id UUID REFERENCES departments(id),
-    district_id UUID REFERENCES districts(id),
+    id BIGSERIAL PRIMARY KEY,
+    department_id BIGINT REFERENCES departments(id),
+    district_id BIGINT REFERENCES districts(id),
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     category news_category,
     banner_url TEXT,
     target_scope news_scope DEFAULT 'global',
     is_pinned BOOLEAN DEFAULT FALSE,
-    created_by UUID REFERENCES users(id),
+    created_by BIGINT REFERENCES users(id),
 
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE emergency_contacts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    department_id UUID REFERENCES departments(id),
-    district_id UUID REFERENCES districts(id),
+    id BIGSERIAL PRIMARY KEY,
+    department_id BIGINT REFERENCES departments(id),
+    district_id BIGINT REFERENCES districts(id),
     name VARCHAR(100) NOT NULL,
     phone_number TEXT CHECK (phone_number ~ '^\+?[0-9]{3,20}$'),
     description TEXT,
@@ -177,8 +175,8 @@ CREATE TABLE emergency_contacts (
 );
 
 CREATE TABLE weather_cache (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    district_id UUID UNIQUE REFERENCES districts(id),
+    id BIGSERIAL PRIMARY KEY,
+    district_id BIGSERIAL UNIQUE REFERENCES districts(id),
     temperature NUMERIC(5,2),
     humidity INTEGER,
     weather VARCHAR(100),

@@ -7,21 +7,21 @@ import (
 )
 
 type JWTClaims struct {
-	UserID string `json:"user_id"`
+	UserID uint   `json:"user_id"`
 	Role   string `json:"role"`
 
 	jwt.RegisteredClaims
 }
 
 func GenerateJWT(
-	userID string,
+	userID uint,
 	role string,
 	secret string,
 ) (string, error) {
 
 	claims := JWTClaims{
 		UserID: userID,
-		Role: role,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(
 				time.Now().Add(24 * time.Hour),

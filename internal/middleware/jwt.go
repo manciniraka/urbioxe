@@ -10,9 +10,7 @@ import (
 	"github.com/manciniraka/urbioxe/internal/helper"
 )
 
-func AuthMiddleware(
-	cfg *config.Config,
-) echo.MiddlewareFunc {
+func AuthMiddleware(cfg *config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
