@@ -2,8 +2,12 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/manciniraka/urbioxe/internal/config"
 	"gorm.io/gorm"
+
+	"github.com/manciniraka/urbioxe/internal/config"
+	"github.com/manciniraka/urbioxe/internal/controller"
+	"github.com/manciniraka/urbioxe/internal/repository"
+	"github.com/manciniraka/urbioxe/internal/service"
 )
 
 func RegisterAuthRoutes(
@@ -12,14 +16,13 @@ func RegisterAuthRoutes(
 	cfg *config.Config,
 ) {
 
-	// TODO:
-	// Repository
-	// Service
-	// Controller
+	userRepo := repository.NewUserRepository(db)
+	authService := service.NewAuthService(userRepo, cfg)
+	authController := controller.NewAuthController(authService)
 
-	auth := e.Group("")
+	e.POST("/register", authController.Register)
 
-	_ = auth
-	_ = db
+	e.POST("/login", authController.Login)
+
 	_ = cfg
 }

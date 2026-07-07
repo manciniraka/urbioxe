@@ -11,12 +11,12 @@ func InitRouter(
 	db *gorm.DB,
 	cfg *config.Config,
 ) {
-	// Helathcheck
+	// Healthcheck
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(
 			200,
 			echo.Map{
-				"message": "ubioxe service is running",
+				"message": "urbioxe service is running",
 			},
 		)
 	})
