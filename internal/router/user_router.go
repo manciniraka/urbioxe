@@ -26,4 +26,5 @@ func RegisterUserRoutes(
 	)
 
 	users.GET("/profile", userController.GetProfile)
+	users.PUT("/profile", userController.UpdateProfile)
 }

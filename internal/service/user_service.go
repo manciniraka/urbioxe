@@ -9,16 +9,16 @@ import (
 type UserService interface {
 	GetProfile(userID uint) (*entity.User, error)
 	UpdateProfile(userID uint, input UpdateProfileInput) (*entity.User, error)
-	ChangePassword(userID uint, input ChangePasswordInput) (*entity.User, error)
+	// ChangePassword(userID uint, input ChangePasswordInput) (*entity.User, error)
 }
 
-type userService struct{
+type userService struct {
 	userRepo repository.UserRepository
 }
 
 func NewUserService(
 	userRepo repository.UserRepository,
-) UserService{
+) UserService {
 	return &userService{
 		userRepo: userRepo,
 	}
@@ -39,6 +39,33 @@ func (s *userService) GetProfile(userID uint) (*entity.User, error) {
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, errs.ErrUserNotFound
+	}
+
+	user.Password = ""
+
+	return user, nil
+}
+
+func (s *userService) UpdateProfile(userID uint, input UpdateProfileInput) (*entity.User, error) {
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, errs.ErrUserNotFound
+	}
+
+	// TODO:
+	// Validate HomeDistrictID once District module is implemented.
+	// Business Rule:
+	// - HomeDistrictID must reference an active district.
+	// - Return errs.ErrDistrictNotFound if district does not exist.
+	// - Return errs.ErrDistrictInactive if district is inactive.
+
+	user.Name = input.Name
+	user.PhoneNumber = input.PhoneNumber
+	user.HomeDistrictID = input.HomeDistrictID
+
+	err = s.userRepo.UpdateProfile(user)
+	if err != nil {
+		return nil, err
 	}
 
 	user.Password = ""
