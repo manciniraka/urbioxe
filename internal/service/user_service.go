@@ -3,13 +3,14 @@ package service
 import (
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/errs"
+	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/repository"
 )
 
 type UserService interface {
 	GetProfile(userID uint) (*entity.User, error)
 	UpdateProfile(userID uint, input UpdateProfileInput) (*entity.User, error)
-	// ChangePassword(userID uint, input ChangePasswordInput) (*entity.User, error)
+	ChangePassword(userID uint, input ChangePasswordInput) error
 }
 
 type userService struct {
@@ -71,4 +72,40 @@ func (s *userService) UpdateProfile(userID uint, input UpdateProfileInput) (*ent
 	user.Password = ""
 
 	return user, nil
+}
+
+func (s *userService) ChangePassword(userID uint, input ChangePasswordInput) error {
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return errs.ErrUserNotFound
+	}
+
+	err = helper.ComparePassword(
+		user.Password,
+		input.OldPassword,
+	)
+	if err != nil {
+		return errs.ErrInvalidCredential
+	}
+
+	if input.OldPassword == input.NewPassword {
+		return errs.ErrSamePassword
+	}
+
+	hashedPassword, err := helper.HashPassword(
+		input.NewPassword,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = s.userRepo.UpdatePassword(
+		userID,
+		hashedPassword,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

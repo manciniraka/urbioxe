@@ -73,3 +73,40 @@ func (uc *UserController) UpdateProfile(c echo.Context) error {
 		user,
 	)
 }
+
+func (uc *UserController) ChangePassword(c echo.Context) error {
+	userID := helper.GetUserID(c)
+
+	var input service.ChangePasswordInput
+
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(
+			c,
+			"invalid request body",
+		)
+	}
+
+	if err := c.Validate(&input); err != nil {
+		return helper.BadRequest(
+			c,
+			err.Error(),
+		)
+	}
+
+	err := uc.userService.ChangePassword(
+		userID,
+		input,
+	)
+	if err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	return helper.Success(
+		c,
+		"password changed successfully",
+		nil,
+	)
+}
