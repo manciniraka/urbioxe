@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 
+	"github.com/manciniraka/urbioxe/external/mailjet"
 	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/errs"
@@ -19,15 +20,18 @@ type AuthService interface {
 type authService struct {
 	userRepo repository.UserRepository
 	cfg      *config.Config
+	mailer   *mailjet.Client
 }
 
 func NewAuthService(
 	userRepo repository.UserRepository,
 	cfg *config.Config,
+	mailer *mailjet.Client,
 ) AuthService {
 	return &authService{
 		userRepo: userRepo,
 		cfg:      cfg,
+		mailer:   mailer,
 	}
 }
 
@@ -78,7 +82,10 @@ func (s *authService) Register(input RegisterInput) (*entity.User, error) {
 	}
 
 	err = s.userRepo.Register(&user)
-	if err != nil {
+	if err := s.mailer.SendWelcomeEmail(
+		user.Name,
+		user.Email,
+	); err != nil {
 		return nil, err
 	}
 

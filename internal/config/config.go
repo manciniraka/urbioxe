@@ -19,8 +19,11 @@ type Config struct {
 
 	JWTSecret string
 
-	MailjetAPIKey    string
-	MailjetSecretKey string
+	MailjetBaseURL     string
+	MailjetAPIKey      string
+	MailjetSecretKey   string
+	MailjetSenderEmail string
+	MailjetSenderName  string
 
 	CloudinaryCloudName string
 	CloudinaryAPIKey    string
@@ -46,8 +49,11 @@ func Load() *Config {
 
 		JWTSecret: os.Getenv("JWT_SECRET"),
 
-		MailjetAPIKey:    os.Getenv("MAILJET_API_KEY"),
-		MailjetSecretKey: os.Getenv("MAILJET_SECRET_KEY"),
+		MailjetBaseURL:     os.Getenv("MAILJET_BASE_URL"),
+		MailjetAPIKey:      os.Getenv("MAILJET_API_KEY"),
+		MailjetSecretKey:   os.Getenv("MAILJET_SECRET_KEY"),
+		MailjetSenderEmail: os.Getenv("MAILJET_SENDER_EMAIL"),
+		MailjetSenderName:  os.Getenv("MAILJET_SENDER_NAME"),
 
 		CloudinaryCloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
 		CloudinaryAPIKey:    os.Getenv("CLOUDINARY_API_KEY"),
