@@ -25,7 +25,7 @@ func InitRouter(
 	RegisterAuthRoutes(e, db, cfg)
 
 	// User
-	RegisterUserRoutes(e, db)
+	RegisterUserRoutes(e, db, cfg)
 
 	// Master Data
 	RegisterDistrictRoutes(e, db)
