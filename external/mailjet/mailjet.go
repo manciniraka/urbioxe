@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -35,42 +36,49 @@ func New(cfg Config) *Client {
 }
 
 type payloadSendEmail struct {
-	Messages []message `json:"messages"`
+	Messages []message `json:"Messages"`
 }
 
 type message struct {
-	From     from   `json:"from"`
-	To       []to   `json:"to"`
-	Subject  string `json:"subject"`
-	TextPart string `json:"text_part"`
-	HTMLPart string `json:"HTML_part"`
+	From     from   `json:"From"`
+	To       []to   `json:"To"`
+	Subject  string `json:"Subject"`
+	TextPart string `json:"TextPart"`
+	HTMLPart string `json:"HTMLPart"`
 }
 
 type from struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	Email string `json:"Email"`
+	Name  string `json:"Name"`
 }
 
 type to struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	Email string `json:"Email"`
+	Name  string `json:"Name"`
+}
+
+func (c *Client) endpoint() string {
+	return c.config.BaseURL + "/v3.1/send"
 }
 
 func (c *Client) SendEmail(
-	toName string,
 	toEmail string,
+	toName string,
 	subject string,
-	body string,
+	textBody string,
+	htmlBody string,
 ) error {
+
 	var lastErr error
 
 	for attempt := 1; attempt <= constant.DefaultMaxRetry; attempt++ {
 
 		lastErr = c.send(
-			toName,
 			toEmail,
+			toName,
 			subject,
-			body,
+			textBody,
+			htmlBody,
 		)
 
 		if lastErr == nil {
@@ -115,11 +123,13 @@ func (c *Client) SendEmail(
 }
 
 func (c *Client) send(
-	toName string,
 	toEmail string,
+	toName string,
 	subject string,
-	body string,
+	textBody string,
+	htmlBody string,
 ) error {
+
 	payload := payloadSendEmail{
 		Messages: []message{
 			{
@@ -134,8 +144,8 @@ func (c *Client) send(
 					},
 				},
 				Subject:  subject,
-				TextPart: body,
-				HTMLPart: body,
+				TextPart: textBody,
+				HTMLPart: htmlBody,
 			},
 		},
 	}
@@ -147,7 +157,7 @@ func (c *Client) send(
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		c.config.BaseURL+"/v3.1/send",
+		c.endpoint(),
 		bytes.NewBuffer(payloadByte),
 	)
 	if err != nil {
@@ -179,10 +189,16 @@ func (c *Client) send(
 
 	defer resp.Body.Close()
 
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return fmt.Errorf(
-			"mailjet returned status %d",
+			"mailjet returned status %d: %s",
 			resp.StatusCode,
+			string(responseBody),
 		)
 	}
 
@@ -196,35 +212,72 @@ func (c *Client) SendWelcomeEmail(
 
 	subject := "Welcome to Urbioxe!"
 
-	body := fmt.Sprintf(`
-		<h2>Welcome, %s 👋</h2>
+	textBody := fmt.Sprintf(
+		`Welcome, %s!
 
-		<p>
-			Thank you for registering at <b>Urbioxe</b>.
-		</p>
+Thank you for registering at Urbioxe.
 
-		<p>
-			Your account has been created successfully.
-		</p>
+Your account has been created successfully.
 
-		<p>
-			You can now report city issues,
-			track your reports,
-			and stay updated with your District or City information.
-		</p>
+You can now:
+- Report city issues
+- Track your reports
+- Stay updated with district and city information
 
-		<br>
+Regards,
+Urbioxe Team`,
+		name,
+	)
 
-		<p>
-			Regards,<br>
-			Urbioxe Team
-		</p>
-	`, name)
+	htmlBody := fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+</head>
+
+<body style="font-family: Arial, Helvetica, sans-serif; line-height:1.6; color:#333333;">
+
+<h2>👋 Welcome, %s!</h2>
+
+<p>
+Thank you for registering at <strong>Urbioxe</strong>.
+</p>
+
+<p>
+Your account has been created successfully.
+</p>
+
+<p>
+You can now:
+</p>
+
+<ul>
+<li>📍 Report city issues</li>
+<li>📋 Track your reports</li>
+<li>🌤️ Stay updated with district and city information</li>
+</ul>
+
+<p>
+We're excited to have you as part of our community.
+</p>
+
+<br>
+
+<p>
+Regards,<br>
+<strong>Urbioxe Team</strong>
+</p>
+
+</body>
+</html>`,
+		name,
+	)
 
 	return c.SendEmail(
-		name,
 		email,
+		name,
 		subject,
-		body,
+		textBody,
+		htmlBody,
 	)
 }

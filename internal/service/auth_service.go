@@ -5,9 +5,11 @@ import (
 
 	"github.com/manciniraka/urbioxe/external/mailjet"
 	"github.com/manciniraka/urbioxe/internal/config"
+	"github.com/manciniraka/urbioxe/internal/constant"
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/helper"
+	"github.com/manciniraka/urbioxe/internal/logger"
 	"github.com/manciniraka/urbioxe/internal/repository"
 	"gorm.io/gorm"
 )
@@ -82,11 +84,20 @@ func (s *authService) Register(input RegisterInput) (*entity.User, error) {
 	}
 
 	err = s.userRepo.Register(&user)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := s.mailer.SendWelcomeEmail(
 		user.Name,
 		user.Email,
 	); err != nil {
-		return nil, err
+		logger.Log.Error(
+			"failed to send welcome email",
+			"tag", constant.LogTagMailjet,
+			"email", user.Email,
+			"error", err,
+		)
 	}
 
 	user.Password = ""
