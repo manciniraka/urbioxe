@@ -32,6 +32,7 @@ func RegisterReportRoutes(
 	report.POST("", reportCtrl.Create)
 	report.GET("", reportCtrl.GetAll)
 	report.GET("/:id", reportCtrl.GetByID)
+	report.PUT("/:id", reportCtrl.Update)
 
 	_ = report
 	_ = db

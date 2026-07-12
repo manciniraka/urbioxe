@@ -10,6 +10,7 @@ type ReportRepository interface {
 	FindAll(filter ReportFilter) ([]entity.Report, int64, error)
 	UpdateStatusWithHistory(reportID int64, newStatus entity.ReportStatus, actorID int64, notes string, isInternal bool) error
 	FindByID(id int64, role string) (*entity.Report, error)
+	Update(report *entity.Report) error
 }
 
 type reportRepository struct {
@@ -129,4 +130,8 @@ func (rr *reportRepository) FindByID(id int64, role string) (*entity.Report, err
 	}
 
 	return &report, nil
+}
+
+func (rr *reportRepository) Update(report *entity.Report) error {
+	return rr.db.Save(report).Error
 }

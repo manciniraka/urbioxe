@@ -15,6 +15,7 @@ type ReportService interface {
 	CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error)
 	GetAllReports(param GetReportsParam) (*ReportListResponse, error)
 	GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error)
+	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error)
 }
 
 type reportService struct {
@@ -47,6 +48,16 @@ type ReportListResponse struct {
 	Page      int             `json:"page"`
 	Limit     int             `json:"limit"`
 	TotalPage int             `json:"total_page"`
+}
+
+type UpdateReportInput struct {
+	Title              string   `json:"title"`
+	Description        string   `json:"description"`
+	AddressLandmark    string   `json:"address_landmark"`
+	CategoryID         int64    `json:"category_id"`
+	IncidentDistrictID int64    `json:"incident_district_id"`
+	Latitude           *float64 `json:"latitude"`
+	Longitude          *float64 `json:"longitude"`
 }
 
 func (rs *reportService) CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error) {
@@ -136,4 +147,51 @@ func (rs *reportService) GetReportByID(reportID int64, userID int64, role string
 	}
 
 	return report, nil
+}
+
+func (rs *reportService) UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error) {
+	existingReport, err := rs.repo.FindByID(reportID, "citizen")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ErrReportNotFound
+		}
+		return nil, err
+	}
+
+	if existingReport.UserID != userID {
+		return nil, errs.ErrReportForbidden
+	}
+
+	if existingReport.Status != entity.StatusPending {
+		return nil, errs.ErrReportAlreadyInProcess
+	}
+
+	if input.Title != "" {
+		existingReport.Title = input.Title
+	}
+	if input.Description != "" {
+		existingReport.Description = input.Description
+	}
+	if input.AddressLandmark != "" {
+		existingReport.AddressLandmark = input.AddressLandmark
+	}
+	if input.CategoryID != 0 {
+		existingReport.CategoryID = input.CategoryID
+	}
+	if input.IncidentDistrictID != 0 {
+		existingReport.IncidentDistrictID = input.IncidentDistrictID
+	}
+	if input.Latitude != nil {
+		existingReport.Latitude = input.Latitude
+	}
+	if input.Longitude != nil {
+		existingReport.Longitude = input.Longitude
+	}
+
+	err = rs.repo.Update(existingReport)
+	if err != nil {
+		return nil, err
+	}
+
+	return existingReport, nil
 }

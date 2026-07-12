@@ -141,3 +141,41 @@ func (rc *ReportController) GetByID(c echo.Context) error {
 
 	return helper.Success(c, "success get report", result)
 }
+
+func (rc *ReportController) Update(c echo.Context) error {
+	idParam := c.Param("id")
+	reportID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "Report ID not valid")
+	}
+
+	userID, _ := c.Get("user_id").(int64)
+	// test not login
+	if userID == 0 {
+		userID = 1
+	}
+
+	var input service.UpdateReportInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
+
+	result, err := rc.svc.UpdateReport(reportID, userID, input)
+	if err != nil {
+		if err.Error() == "report not found" {
+			return helper.HandleError(c, errs.ErrReportNotFound)
+		}
+		if err.Error() == "you are not allowed to access this report" {
+			return helper.HandleError(c, errs.ErrReportForbidden)
+		}
+		if err.Error() == "report already in process" {
+			return helper.HandleError(c, errs.ErrReportAlreadyInProcess)
+		}
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return helper.Success(c, "success update report", result)
+}
