@@ -179,3 +179,51 @@ func (rc *ReportController) Update(c echo.Context) error {
 
 	return helper.Success(c, "success update report", result)
 }
+
+func (rc *ReportController) Assign(c echo.Context) error {
+	idParam := c.Param("id")
+	reportID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "Report ID not valid")
+	}
+
+	adminUserID, _ := c.Get("user_id").(int64)
+	role, _ := c.Get("role").(string)
+	// test login as admin
+	if adminUserID == 0 {
+		adminUserID = 4
+	}
+	if role == "" {
+		role = "department_admin"
+	}
+
+	var input service.AssignReportInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
+
+	err = rc.svc.AssignReport(reportID, adminUserID, role, input)
+	if err != nil {
+		if err.Error() == "you are not allowed to assign this report" {
+			return helper.HandleError(c, errs.ErrReportAssignForbidden)
+		}
+		if err.Error() == "report not found" {
+			return helper.HandleError(c, errs.ErrReportNotFound)
+		}
+		if err.Error() == "report already resolved" || err.Error() == "staff_id required" {
+			return helper.HandleError(c, errs.ErrReportAlreadyResolved)
+		}
+		if err.Error() == "report already assigned" {
+			return helper.HandleError(c, errs.ErrReportAlreadyAssigned)
+		}
+		if err.Error() == "report already in process" {
+			return helper.HandleError(c, errs.ErrReportAlreadyInProcess)
+		}
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return helper.Success(c, "Success assign officer to this report", nil)
+}

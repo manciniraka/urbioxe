@@ -16,6 +16,7 @@ type ReportService interface {
 	GetAllReports(param GetReportsParam) (*ReportListResponse, error)
 	GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error)
 	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error)
+	AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error
 }
 
 type reportService struct {
@@ -58,6 +59,11 @@ type UpdateReportInput struct {
 	IncidentDistrictID int64    `json:"incident_district_id"`
 	Latitude           *float64 `json:"latitude"`
 	Longitude          *float64 `json:"longitude"`
+}
+
+type AssignReportInput struct {
+	StaffID int64  `json:"staff_id"`
+	Notes   string `json:"notes"`
 }
 
 func (rs *reportService) CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error) {
@@ -194,4 +200,41 @@ func (rs *reportService) UpdateReport(reportID int64, userID int64, input Update
 	}
 
 	return existingReport, nil
+}
+
+func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error {
+	if role != "department_admin" && role != "super_admin" {
+		return errs.ErrReportForbidden
+	}
+
+	if input.StaffID == 0 {
+		return errors.New("staff_id required")
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
+		return err
+	}
+
+	if report.AssignedStaffID != nil || report.Status == entity.StatusAssigned {
+		return errs.ErrReportAlreadyAssigned
+	}
+
+	if report.Status == entity.StatusInProgress {
+		return errs.ErrReportAlreadyInProcess
+	}
+
+	if report.Status == entity.StatusResolved || report.Status == entity.StatusRejected {
+		return errs.ErrReportAlreadyResolved
+	}
+
+	notes := input.Notes
+	if notes == "" {
+		notes = "Report already assigned to field officer."
+	}
+
+	return rs.repo.AssignStaff(reportID, input.StaffID, adminUserID, notes)
 }

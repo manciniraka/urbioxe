@@ -11,6 +11,7 @@ type ReportRepository interface {
 	UpdateStatusWithHistory(reportID int64, newStatus entity.ReportStatus, actorID int64, notes string, isInternal bool) error
 	FindByID(id int64, role string) (*entity.Report, error)
 	Update(report *entity.Report) error
+	AssignStaff(reportID int64, staffID int64, actorID int64, notes string) error
 }
 
 type reportRepository struct {
@@ -134,4 +135,29 @@ func (rr *reportRepository) FindByID(id int64, role string) (*entity.Report, err
 
 func (rr *reportRepository) Update(report *entity.Report) error {
 	return rr.db.Save(report).Error
+}
+
+func (rr *reportRepository) AssignStaff(reportID int64, staffID int64, actorID int64, notes string) error {
+	return rr.db.Transaction(func(tx *gorm.DB) error {
+		updates := map[string]interface{}{
+			"assigned_staff_id": staffID,
+			"status":            entity.StatusAssigned,
+		}
+		if err := tx.Model(&entity.Report{}).Where("id = ?", reportID).Updates(updates).Error; err != nil {
+			return err
+		}
+
+		history := entity.ReportHistory{
+			ReportID:   reportID,
+			Status:     entity.StatusAssigned,
+			Notes:      notes,
+			IsInternal: false,
+			ActorID:    &actorID,
+		}
+		if err := tx.Create(&history).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
