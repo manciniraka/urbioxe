@@ -9,6 +9,7 @@ type ReportRepository interface {
 	Create(report *entity.Report) error
 	FindAll(filter ReportFilter) ([]entity.Report, int64, error)
 	UpdateStatusWithHistory(reportID int64, newStatus entity.ReportStatus, actorID int64, notes string, isInternal bool) error
+	FindByID(id int64, role string) (*entity.Report, error)
 }
 
 type reportRepository struct {
@@ -101,4 +102,31 @@ func (rr *reportRepository) FindAll(filter ReportFilter) ([]entity.Report, int64
 	}
 
 	return reports, totalData, nil
+}
+
+func (rr *reportRepository) FindByID(id int64, role string) (*entity.Report, error) {
+	var report entity.Report
+
+	query := rr.db.Model(&entity.Report{}).
+		Preload("Category").
+		Preload("District").
+		Preload("User").
+		Preload("Attachments")
+
+	if role == "citizen" {
+		query = query.Preload("Histories", func(db *gorm.DB) *gorm.DB {
+			return db.Where("is_internal = ?", false).Order("report_histories.created_at ASC")
+		})
+	} else {
+		query = query.Preload("Histories", func(db *gorm.DB) *gorm.DB {
+			return db.Order("report_histories.created_at ASC")
+		})
+	}
+
+	err := query.First(&report, id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &report, nil
 }

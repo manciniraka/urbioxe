@@ -1,16 +1,20 @@
 package service
 
 import (
+	"errors"
 	"mime/multipart"
 
 	"github.com/manciniraka/urbioxe/external/cloudinary"
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/repository"
+	"gorm.io/gorm"
 )
 
 type ReportService interface {
 	CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error)
 	GetAllReports(param GetReportsParam) (*ReportListResponse, error)
+	GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error)
 }
 
 type reportService struct {
@@ -116,4 +120,20 @@ func (rs *reportService) GetAllReports(param GetReportsParam) (*ReportListRespon
 		Limit:     param.Limit,
 		TotalPage: totalPage,
 	}, nil
+}
+
+func (rs *reportService) GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error) {
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ErrReportNotFound
+		}
+		return nil, err
+	}
+
+	if role == "citizen" && report.UserID != userID {
+		return nil, errs.ErrReportForbidden
+	}
+
+	return report, nil
 }

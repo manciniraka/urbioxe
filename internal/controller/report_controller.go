@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/service"
 )
@@ -103,4 +105,39 @@ func (rc *ReportController) GetAll(c echo.Context) error {
 		},
 		"data": result.Data,
 	})
+}
+
+func (rc *ReportController) GetByID(c echo.Context) error {
+	idParam := c.Param("id")
+	reportID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "Report ID not valid")
+	}
+
+	userID, _ := c.Get("user_id").(int64)
+	role, _ := c.Get("role").(string)
+
+	// test if not login
+	if userID == 0 {
+		userID = 1
+	}
+	if role == "" {
+		role = "citizen"
+	}
+
+	result, err := rc.svc.GetReportByID(reportID, userID, role)
+	if err != nil {
+		if err.Error() == "report not found" {
+			return helper.HandleError(c, errs.ErrReportNotFound)
+		}
+		if err.Error() == "you are not allowed to access this report" {
+			return helper.HandleError(c, errs.ErrReportForbidden)
+		}
+		return c.JSON(http.StatusInternalServerError, echo.Map{
+			"status":  "error",
+			"message": err.Error(),
+		})
+	}
+
+	return helper.Success(c, "success get report", result)
 }
