@@ -30,6 +30,7 @@ func RegisterReportRoutes(
 
 	report := e.Group("/reports")
 	report.POST("", reportCtrl.Create)
+	report.GET("", reportCtrl.GetAll)
 
 	_ = report
 	_ = db
