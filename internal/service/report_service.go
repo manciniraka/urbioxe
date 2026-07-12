@@ -63,6 +63,15 @@ func (rs *reportService) CreateReport(reportInput entity.Report, files []*multip
 	reportInput.Attachments = attachments
 	reportInput.Status = entity.StatusPending
 
+	reportInput.Histories = []entity.ReportHistory{
+		{
+			Status:     entity.StatusPending,
+			Notes:      "Report already created. Waiting for verification.",
+			IsInternal: false,
+			ActorID:    &reportInput.UserID,
+		},
+	}
+
 	err := rs.repo.Create(&reportInput)
 	if err != nil {
 		return nil, err
