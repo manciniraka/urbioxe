@@ -17,6 +17,7 @@ type ReportService interface {
 	GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error)
 	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error)
 	AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error
+	StartReport(reportID int64, officerUserID int64, role string, notes string) error
 }
 
 type reportService struct {
@@ -64,6 +65,10 @@ type UpdateReportInput struct {
 type AssignReportInput struct {
 	StaffID int64  `json:"staff_id"`
 	Notes   string `json:"notes"`
+}
+
+type StartReportInput struct {
+	Notes string `json:"notes"`
 }
 
 func (rs *reportService) CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error) {
@@ -204,7 +209,7 @@ func (rs *reportService) UpdateReport(reportID int64, userID int64, input Update
 
 func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error {
 	if role != "department_admin" && role != "super_admin" {
-		return errs.ErrReportForbidden
+		return errs.ErrReportAssignForbidden
 	}
 
 	if input.StaffID == 0 {
@@ -237,4 +242,43 @@ func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role st
 	}
 
 	return rs.repo.AssignStaff(reportID, input.StaffID, adminUserID, notes)
+}
+
+func (rs *reportService) StartReport(reportID int64, officerUserID int64, role string, notes string) error {
+	if role != "officer" && role != "super_admin" {
+		return errs.ErrReportUpdateForbidden
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
+		return err
+	}
+
+	if report.Status != entity.StatusAssigned {
+		if report.Status == entity.StatusInProgress {
+			return errs.ErrReportAlreadyInProcess
+		}
+		return errs.ErrReportNotAssigned
+	}
+
+	if role == "officer" {
+		if report.AssignedStaffID == nil {
+			return errs.ErrReportNotAssigned
+		}
+	}
+
+	if notes == "" {
+		notes = "Officer start handle the report"
+	}
+
+	return rs.repo.UpdateStatusWithHistory(
+		reportID,
+		entity.StatusInProgress,
+		officerUserID,
+		notes,
+		false,
+	)
 }

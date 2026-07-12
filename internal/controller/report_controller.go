@@ -1,12 +1,10 @@
 package controller
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/manciniraka/urbioxe/internal/entity"
-	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/service"
 )
@@ -71,10 +69,10 @@ func (rc *ReportController) GetAll(c echo.Context) error {
 
 	// test if not login
 	if userID == 0 {
-		userID = 1
+		userID = 3
 	}
 	if role == "" {
-		role = "citizen"
+		role = "officer"
 	}
 
 	page, _ := strconv.Atoi(c.QueryParam("page"))
@@ -119,24 +117,15 @@ func (rc *ReportController) GetByID(c echo.Context) error {
 
 	// test if not login
 	if userID == 0 {
-		userID = 1
+		userID = 3
 	}
 	if role == "" {
-		role = "citizen"
+		role = "officer"
 	}
 
 	result, err := rc.svc.GetReportByID(reportID, userID, role)
 	if err != nil {
-		if err.Error() == "report not found" {
-			return helper.HandleError(c, errs.ErrReportNotFound)
-		}
-		if err.Error() == "you are not allowed to access this report" {
-			return helper.HandleError(c, errs.ErrReportForbidden)
-		}
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return helper.HandleError(c, err)
 	}
 
 	return helper.Success(c, "success get report", result)
@@ -162,19 +151,7 @@ func (rc *ReportController) Update(c echo.Context) error {
 
 	result, err := rc.svc.UpdateReport(reportID, userID, input)
 	if err != nil {
-		if err.Error() == "report not found" {
-			return helper.HandleError(c, errs.ErrReportNotFound)
-		}
-		if err.Error() == "you are not allowed to access this report" {
-			return helper.HandleError(c, errs.ErrReportForbidden)
-		}
-		if err.Error() == "report already in process" {
-			return helper.HandleError(c, errs.ErrReportAlreadyInProcess)
-		}
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return helper.HandleError(c, err)
 	}
 
 	return helper.Success(c, "success update report", result)
@@ -204,26 +181,37 @@ func (rc *ReportController) Assign(c echo.Context) error {
 
 	err = rc.svc.AssignReport(reportID, adminUserID, role, input)
 	if err != nil {
-		if err.Error() == "you are not allowed to assign this report" {
-			return helper.HandleError(c, errs.ErrReportAssignForbidden)
-		}
-		if err.Error() == "report not found" {
-			return helper.HandleError(c, errs.ErrReportNotFound)
-		}
-		if err.Error() == "report already resolved" || err.Error() == "staff_id required" {
-			return helper.HandleError(c, errs.ErrReportAlreadyResolved)
-		}
-		if err.Error() == "report already assigned" {
-			return helper.HandleError(c, errs.ErrReportAlreadyAssigned)
-		}
-		if err.Error() == "report already in process" {
-			return helper.HandleError(c, errs.ErrReportAlreadyInProcess)
-		}
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		return helper.HandleError(c, err)
 	}
 
 	return helper.Success(c, "Success assign officer to this report", nil)
+}
+
+func (rc *ReportController) Start(c echo.Context) error {
+	idParam := c.Param("id")
+	reportID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "Report ID not valid")
+	}
+
+	officerUserID, _ := c.Get("user_id").(int64)
+	role, _ := c.Get("role").(string)
+
+	// test officer login
+	if officerUserID == 0 {
+		officerUserID = 1
+	}
+	if role == "" {
+		role = "officer"
+	}
+
+	var input service.StartReportInput
+	_ = c.Bind(&input)
+
+	err = rc.svc.StartReport(reportID, officerUserID, role, input.Notes)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "Report handled started. Status: in progress", nil)
 }

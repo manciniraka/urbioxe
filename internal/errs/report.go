@@ -12,4 +12,5 @@ var (
 	ErrReportAlreadyResolved  = errors.New("report already resolved")
 	ErrReportAlreadyInProcess = errors.New("report already in process")
 	ErrReportAssignForbidden  = errors.New("you are not allowed to assign this report")
+	ErrReportUpdateForbidden  = errors.New("you are not allowed to update status this report")
 )
