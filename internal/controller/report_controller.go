@@ -215,3 +215,36 @@ func (rc *ReportController) Start(c echo.Context) error {
 
 	return helper.Success(c, "Report handled started. Status: in progress", nil)
 }
+
+func (rc *ReportController) Resolve(c echo.Context) error {
+	idParam := c.Param("id")
+	reportID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "Report ID not valid")
+	}
+
+	officerUserID, _ := c.Get("user_id").(int64)
+	role, _ := c.Get("role").(string)
+	// test user
+	if officerUserID == 0 {
+		officerUserID = 3
+	}
+	if role == "" {
+		role = "officer"
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
+
+	notes := c.FormValue("notes")
+	files := form.File["images"]
+
+	err = rc.svc.ResolveReport(reportID, officerUserID, role, notes, files)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "Report mark as resolve", nil)
+}

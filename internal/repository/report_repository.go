@@ -12,6 +12,7 @@ type ReportRepository interface {
 	FindByID(id int64, role string) (*entity.Report, error)
 	Update(report *entity.Report) error
 	AssignStaff(reportID int64, staffID int64, actorID int64, notes string) error
+	ResolveReport(reportID int64, actorID int64, notes string, attachments []entity.ReportAttachment) error
 }
 
 type reportRepository struct {
@@ -150,6 +151,36 @@ func (rr *reportRepository) AssignStaff(reportID int64, staffID int64, actorID i
 		history := entity.ReportHistory{
 			ReportID:   reportID,
 			Status:     entity.StatusAssigned,
+			Notes:      notes,
+			IsInternal: false,
+			ActorID:    &actorID,
+		}
+		if err := tx.Create(&history).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (rr *reportRepository) ResolveReport(reportID int64, actorID int64, notes string, attachments []entity.ReportAttachment) error {
+	return rr.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&entity.Report{}).Where("id = ?", reportID).Update("status", entity.StatusResolved).Error; err != nil {
+			return err
+		}
+
+		for i := range attachments {
+			attachments[i].ReportID = reportID
+		}
+		if len(attachments) > 0 {
+			if err := tx.Create(&attachments).Error; err != nil {
+				return err
+			}
+		}
+
+		history := entity.ReportHistory{
+			ReportID:   reportID,
+			Status:     entity.StatusResolved,
 			Notes:      notes,
 			IsInternal: false,
 			ActorID:    &actorID,

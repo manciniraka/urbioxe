@@ -11,6 +11,7 @@ var (
 	ErrReportNotAssigned      = errors.New("report has not been assigned to a staff")
 	ErrReportAlreadyResolved  = errors.New("report already resolved")
 	ErrReportAlreadyInProcess = errors.New("report already in process")
+	ErrReportShouldInProcess  = errors.New("only in process report can be updated")
 	ErrReportAssignForbidden  = errors.New("you are not allowed to assign this report")
 	ErrReportUpdateForbidden  = errors.New("you are not allowed to update status this report")
 )

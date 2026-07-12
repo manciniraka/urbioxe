@@ -18,6 +18,7 @@ type ReportService interface {
 	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error)
 	AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error
 	StartReport(reportID int64, officerUserID int64, role string, notes string) error
+	ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error
 }
 
 type reportService struct {
@@ -281,4 +282,45 @@ func (rs *reportService) StartReport(reportID int64, officerUserID int64, role s
 		notes,
 		false,
 	)
+}
+
+func (rs *reportService) ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error {
+	if role != "officer" && role != "super_admin" {
+		return errs.ErrReportUpdateForbidden
+	}
+
+	if len(files) == 0 {
+		return errors.New("upload minimal 1 image")
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
+		return err
+	}
+
+	if report.Status != entity.StatusInProgress {
+		return errs.ErrReportShouldInProcess
+	}
+
+	var resolutionAttachments []entity.ReportAttachment
+	for _, fileHeader := range files {
+		secureURL, err := rs.cldSvc.UploadImage(fileHeader)
+		if err != nil {
+			return errors.New("failed upload image: " + err.Error())
+		}
+
+		resolutionAttachments = append(resolutionAttachments, entity.ReportAttachment{
+			FileURL: secureURL,
+			Type:    entity.TypeResolution,
+		})
+	}
+
+	if notes == "" {
+		notes = "Report mark as solved by officer"
+	}
+
+	return rs.repo.ResolveReport(reportID, officerUserID, notes, resolutionAttachments)
 }
