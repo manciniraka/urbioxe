@@ -25,7 +25,7 @@ func NewNewsRepository(db *sql.DB) *newsRepository {
 	}
 }
 
-func (r *newsRepository) GetAll(ctx context.Context, ) ([]entity.RegionalNews, error) {
+func (r *newsRepository) GetAll(ctx context.Context) ([]entity.RegionalNews, error) {
 	query := `
 		SELECT
 			id,
@@ -76,4 +76,45 @@ func (r *newsRepository) GetAll(ctx context.Context, ) ([]entity.RegionalNews, e
 	}
 
 	return news, nil
+}
+
+func (r *newsRepository) GetByID(ctx context.Context, id int64) (*entity.RegionalNews, error) {
+	query := `
+		SELECT
+			id,
+			department_id,
+			district_id,
+			title,
+			content,
+			category,
+			banner_url,
+			target_scope,
+			is_pinned,
+			created_by,
+			created_at,
+			updated_at
+		FROM regional_news
+		WHERE id = $1
+	`
+	var news entity.RegionalNews
+
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&news.ID,
+		&news.DepartmentID,
+		&news.DistrictID,
+		&news.Title,
+		&news.Content,
+		&news.Category,
+		&news.BannerURL,
+		&news.TargetScope,
+		&news.IsPinned,
+		&news.CreatedBy,
+		&news.CreatedAt,
+		&news.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &news, nil
 }
