@@ -20,9 +20,7 @@ type newsRepository struct {
 }
 
 func NewNewsRepository(db *sql.DB) *newsRepository {
-	return &newsRepository{
-		db: db,
-	}
+	return &newsRepository{db: db,}
 }
 
 func (r *newsRepository) GetAll(ctx context.Context) ([]entity.RegionalNews, error) {
@@ -239,4 +237,27 @@ func (r *newsRepository) Update(ctx context.Context, id int64, news *entity.Upda
 	}
 
 	return &result, nil
+}
+
+func (r *newsRepository) Delete(ctx context.Context, id int64) error {
+	query := `
+		DELETE FROM regional_news
+		WHERE id = $1
+	`
+	
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
