@@ -23,6 +23,7 @@ func RegisterCategoryRoutes(
 	categories.GET("/:id", categoryController.GetByID)
 	categories.POST("", categoryController.Create)
 	categories.PUT("/:id", categoryController.Update)
+	categories.PATCH("/:id/status", categoryController.ToggleStatus)
 
 	_ = categories
 	_ = db

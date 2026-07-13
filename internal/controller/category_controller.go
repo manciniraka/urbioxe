@@ -94,3 +94,28 @@ func (cc *CategoryController) Update(c echo.Context) error {
 
 	return helper.Success(c, "success update category", category)
 }
+
+func (cc *CategoryController) ToggleStatus(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "category id is not valid")
+	}
+
+	role, _ := c.Get("role").(string)
+	if role == "" {
+		role = "department_admin"
+	}
+
+	var input service.ToggleCategoryStatusInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body is not valid")
+	}
+
+	err = cc.svc.ToggleCategoryStatus(id, role, input)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success update status category", nil)
+}
