@@ -65,3 +65,32 @@ func (cc *CategoryController) Create(c echo.Context) error {
 
 	return helper.Created(c, "success create category", category)
 }
+
+func (cc *CategoryController) Update(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "category id is not valid")
+	}
+
+	role, _ := c.Get("role").(string)
+	if role == "" {
+		role = "department_admin"
+	}
+
+	var input service.UpdateCategoryInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body is not valid")
+	}
+
+	category, err := cc.svc.UpdateCategory(id, role, input)
+	if err != nil {
+		if err.Error() == "department_id required" ||
+			err.Error() == "category name required" {
+			return helper.BadRequest(c, err.Error())
+		}
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success update category", category)
+}

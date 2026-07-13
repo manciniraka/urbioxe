@@ -13,6 +13,7 @@ type CategoryService interface {
 	GetAllCategories(isOnlyActive bool) ([]entity.Category, error)
 	GetCategoryByID(id int64) (*entity.Category, error)
 	CreateCategory(role string, input CreateCategoryInput) (*entity.Category, error)
+	UpdateCategory(id int64, role string, input UpdateCategoryInput) (*entity.Category, error)
 }
 
 type categoryService struct {
@@ -26,6 +27,12 @@ func NewCategoryService(repo repository.CategoryRepository) CategoryService {
 }
 
 type CreateCategoryInput struct {
+	DepartmentID int64  `json:"department_id"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+}
+
+type UpdateCategoryInput struct {
 	DepartmentID int64  `json:"department_id"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
@@ -79,4 +86,44 @@ func (cs *categoryService) CreateCategory(role string, input CreateCategoryInput
 	}
 
 	return &category, nil
+}
+
+func (cs *categoryService) UpdateCategory(id int64, role string, input UpdateCategoryInput) (*entity.Category, error) {
+	if role != "super_admin" && role != "department_admin" {
+		return nil, errs.ErrForbidden
+	}
+
+	category, err := cs.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ErrCategoryNotFound
+		}
+		return nil, err
+	}
+
+	if input.DepartmentID == 0 {
+		return nil, errors.New("department_id required")
+	}
+	if input.Name == "" {
+		return nil, errors.New("category name required")
+	}
+
+	exists, err := cs.repo.CheckNameExistsInDepartment(input.DepartmentID, input.Name, id)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errs.ErrCategoryAlreadyExists
+	}
+
+	category.DepartmentID = input.DepartmentID
+	category.Name = input.Name
+	category.Description = input.Description
+
+	err = cs.repo.Update(category)
+	if err != nil {
+		return nil, err
+	}
+
+	return category, nil
 }
