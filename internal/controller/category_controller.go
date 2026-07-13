@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"strconv"
+
 	"github.com/labstack/echo/v4"
 	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/service"
@@ -24,4 +26,19 @@ func (cc *CategoryController) GetAll(c echo.Context) error {
 	}
 
 	return helper.Success(c, "success get all categories", categories)
+}
+
+func (cc *CategoryController) GetByID(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "category id is not valid")
+	}
+
+	category, err := cc.svc.GetCategoryByID(id)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "succes get category", category)
 }
