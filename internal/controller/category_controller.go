@@ -42,3 +42,26 @@ func (cc *CategoryController) GetByID(c echo.Context) error {
 
 	return helper.Success(c, "succes get category", category)
 }
+
+func (cc *CategoryController) Create(c echo.Context) error {
+	role, _ := c.Get("role").(string)
+	// test without login
+	if role == "" {
+		role = "department_admin"
+	}
+
+	var input service.CreateCategoryInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
+
+	category, err := cc.svc.CreateCategory(role, input)
+	if err != nil {
+		if err.Error() == "department_id required" || err.Error() == "category name required" {
+			return helper.BadRequest(c, err.Error())
+		}
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Created(c, "success create category", category)
+}
