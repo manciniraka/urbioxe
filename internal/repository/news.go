@@ -118,3 +118,62 @@ func (r *newsRepository) GetByID(ctx context.Context, id int64) (*entity.Regiona
 
 	return &news, nil
 }
+
+func (r *newsRepository) Create(ctx context.Context, news *entity.CreateNewsRequest) (*entity.RegionalNews, error) {
+	query := `
+		INSERT INTO regional_news (
+			department_id,
+			district_id,
+			title,
+			content,
+			category,
+			banner_url,
+			target_scope,
+			is_pinned
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING
+			id,
+			department_id,
+			district_id,
+			title,
+			content,
+			category,
+			banner_url,
+			target_scope,
+			is_pinned,
+			created_by,
+			created_at,
+			updated_at
+	`
+	var result entity.RegionalNews
+
+	err := r.db.QueryRowContext(
+		ctx,
+		query,
+		news.DepartmentID,
+		news.DistrictID,
+		news.Title,
+		news.Content,
+		news.Category,
+		news.BannerURL,
+		news.TargetScope,
+		news.IsPinned,
+	).Scan(
+		&result.ID,
+		&result.DepartmentID,
+		&result.DistrictID,
+		&result.Title,
+		&result.Category,
+		&result.BannerURL,
+		&result.TargetScope,
+		&result.IsPinned,
+		&result.CreatedBy,
+		&result.CreatedAt,
+		&result.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
