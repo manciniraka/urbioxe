@@ -55,10 +55,7 @@ func (ac *AuthController) Register(c echo.Context) error {
 	)
 }
 
-func (ac *AuthController) Login(
-	c echo.Context,
-) error {
-
+func (ac *AuthController) Login(c echo.Context) error {
 	var input service.LoginInput
 
 	if err := c.Bind(&input); err != nil {

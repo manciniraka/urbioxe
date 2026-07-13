@@ -7,8 +7,13 @@ import (
 
 type UserRepository interface {
 	Register(user *entity.User) error
+
 	FindByEmail(email string) (*entity.User, error)
 	FindByNIK(nik string) (*entity.User, error)
+
+	GetByID(id uint) (*entity.User, error)
+	UpdateProfile(user *entity.User) error
+	UpdatePassword(id uint, password string) error
 }
 
 type userRepository struct {
@@ -52,4 +57,32 @@ func (ur *userRepository) FindByNIK(nik string) (*entity.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (ur *userRepository) GetByID(id uint) (*entity.User, error) {
+	var user entity.User
+
+	err := ur.db.
+		First(&user, id).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (ur *userRepository) UpdateProfile(user *entity.User) error {
+	return ur.db.
+		Save(user).
+		Error
+}
+
+func (ur *userRepository) UpdatePassword(id uint, password string) error {
+	return ur.db.
+		Model(&entity.User{}).
+		Where("id = ?", id).
+		Update("password", password).
+		Error
 }
