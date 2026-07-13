@@ -205,7 +205,7 @@ func (rc *ReportController) Start(c echo.Context) error {
 		role = "officer"
 	}
 
-	var input service.StartReportInput
+	var input service.UpdateStatusReportInput
 	_ = c.Bind(&input)
 
 	err = rc.svc.StartReport(reportID, officerUserID, role, input.Notes)
@@ -247,4 +247,35 @@ func (rc *ReportController) Resolve(c echo.Context) error {
 	}
 
 	return helper.Success(c, "Report mark as resolve", nil)
+}
+
+func (rc *ReportController) Reject(c echo.Context) error {
+	idParam := c.Param("id")
+	reportID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "Report ID not valid")
+	}
+
+	adminUserID, _ := c.Get("user_id").(int64)
+	role, _ := c.Get("role").(string)
+
+	// test without login
+	if adminUserID == 0 {
+		adminUserID = 4
+	}
+	if role == "" {
+		role = "department_admin"
+	}
+
+	var input service.UpdateStatusReportInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
+
+	err = rc.svc.RejectReport(reportID, adminUserID, role, input)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success reject report", nil)
 }

@@ -36,6 +36,7 @@ func RegisterReportRoutes(
 	report.PATCH("/:id/assign", reportCtrl.Assign)
 	report.PATCH("/:id/start", reportCtrl.Start)
 	report.PATCH("/:id/resolve", reportCtrl.Resolve)
+	report.PATCH("/:id/reject", reportCtrl.Reject)
 
 	_ = report
 	_ = db

@@ -19,6 +19,7 @@ type ReportService interface {
 	AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error
 	StartReport(reportID int64, officerUserID int64, role string, notes string) error
 	ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error
+	RejectReport(reportID int64, adminUserID int64, role string, input UpdateStatusReportInput) error
 }
 
 type reportService struct {
@@ -68,7 +69,7 @@ type AssignReportInput struct {
 	Notes   string `json:"notes"`
 }
 
-type StartReportInput struct {
+type UpdateStatusReportInput struct {
 	Notes string `json:"notes"`
 }
 
@@ -323,4 +324,40 @@ func (rs *reportService) ResolveReport(reportID int64, officerUserID int64, role
 	}
 
 	return rs.repo.ResolveReport(reportID, officerUserID, notes, resolutionAttachments)
+}
+
+func (rs *reportService) RejectReport(reportID int64, adminUserID int64, role string, input UpdateStatusReportInput) error {
+	if role != "department_admin" && role != "super_admin" {
+		return errs.ErrReportUpdateForbidden
+	}
+
+	if input.Notes == "" {
+		return errors.New("notes required!")
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
+		return err
+	}
+
+	if report.Status == entity.StatusInProgress {
+		return errs.ErrReportAlreadyInProcess
+	}
+	if report.Status == entity.StatusResolved {
+		return errs.ErrReportAlreadyResolved
+	}
+	if report.Status == entity.StatusRejected {
+		return errs.ErrReportAlreadyRejected
+	}
+
+	return rs.repo.UpdateStatusWithHistory(
+		reportID,
+		entity.StatusRejected,
+		adminUserID,
+		input.Notes,
+		false,
+	)
 }
