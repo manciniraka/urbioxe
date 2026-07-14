@@ -1,8 +1,12 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/repository"
+	"gorm.io/gorm"
 )
 
 type CreateDepartmentInput struct {
@@ -44,7 +48,14 @@ func (ds *departmentService) GetAllDepartments(isOnlyActive bool) ([]entity.Depa
 }
 
 func (ds *departmentService) GetDepartmentByID(id uint) (*entity.Department, error) {
-	return &entity.Department{}, nil
+	dept, err := ds.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ErrDepartmentNotFound
+		}
+		return nil, err
+	}
+	return dept, nil
 }
 
 func (ds *departmentService) CreateDepartment(role string, input CreateDepartmentInput) (*entity.Department, error) {

@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"strconv"
+
 	"github.com/labstack/echo/v4"
 	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/service"
@@ -27,7 +29,18 @@ func (dc *DepartmentController) GetAll(c echo.Context) error {
 }
 
 func (dc *DepartmentController) GetByID(c echo.Context) error {
-	return nil
+	idParam := c.Param("id")
+	id64, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "department id is not valid")
+	}
+
+	dept, err := dc.svc.GetDepartmentByID(uint(id64))
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success get department detaail", dept)
 }
 
 func (dc *DepartmentController) Create(c echo.Context) error {
