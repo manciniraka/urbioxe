@@ -26,6 +26,9 @@ type ReportService interface {
 	StartReport(reportID uint, officerUserID uint, role string, notes string) error
 	ResolveReport(reportID uint, officerUserID uint, role string, notes string, files []*multipart.FileHeader) error
 	RejectReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error
+	VerifyReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error
+	UpdatePriority(reportID uint, adminUserID uint, role string, input UpdatePriorityInput) error
+	ReassignReport(reportID uint, adminUserID uint, role string, input ReassignReportInput) error
 }
 
 type reportService struct {
@@ -103,6 +106,16 @@ type AssignReportInput struct {
 
 type UpdateStatusReportInput struct {
 	Notes string `json:"notes"`
+}
+
+type UpdatePriorityInput struct {
+	Priority entity.ReportPriority `json:"priority"`
+	Notes    string                `json:"notes"`
+}
+
+type ReassignReportInput struct {
+	NewStaffID uint   `json:"new_staff_id"`
+	Notes      string `json:"notes"`
 }
 
 // helper
@@ -553,5 +566,42 @@ func (rs *reportService) RejectReport(reportID uint, adminUserID uint, role stri
 	}
 
 	rs.sendStatusEmailAsync(report, string(entity.StatusRejected), input.Notes)
+	return nil
+}
+
+func (rs *reportService) VerifyReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error {
+	if role != "admin" && role != "super_admin" {
+		return errs.ErrReportUpdateForbidden
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		return err
+	}
+
+	if report.Status != entity.StatusPending {
+		return errs.ErrReportShouldPending
+	}
+
+	notes := input.Notes
+	if notes == "" {
+		notes = "Report already verified by admin and it's valid."
+	}
+
+	err = rs.repo.UpdateStatusWithHistory(reportID, entity.StatusVerified, adminUserID, notes, false)
+	if err != nil {
+		return err
+	}
+
+	rs.sendStatusEmailAsync(report, string(entity.StatusVerified), notes)
+
+	return nil
+}
+
+func (rs *reportService) UpdatePriority(reportID uint, adminUserID uint, role string, input UpdatePriorityInput) error {
+	return nil
+}
+
+func (rs *reportService) ReassignReport(reportID uint, adminUserID uint, role string, input ReassignReportInput) error {
 	return nil
 }

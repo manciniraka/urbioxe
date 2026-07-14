@@ -97,7 +97,7 @@ func (rc *ReportController) GetByID(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		return helper.BadRequest(c, "Report ID not valid")
+		return helper.BadRequest(c, "report id is not valid")
 	}
 
 	userID := helper.GetUserID(c)
@@ -115,7 +115,7 @@ func (rc *ReportController) Update(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		return helper.BadRequest(c, "Report ID not valid")
+		return helper.BadRequest(c, "report id is not valid")
 	}
 
 	userID := helper.GetUserID(c)
@@ -137,7 +137,7 @@ func (rc *ReportController) Assign(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		return helper.BadRequest(c, "Report ID not valid")
+		return helper.BadRequest(c, "report id is not valid")
 	}
 
 	adminUserID := helper.GetUserID(c)
@@ -163,7 +163,7 @@ func (rc *ReportController) Start(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		return helper.BadRequest(c, "Report ID not valid")
+		return helper.BadRequest(c, "report id is not valid")
 	}
 
 	officerUserID := helper.GetUserID(c)
@@ -184,7 +184,7 @@ func (rc *ReportController) Resolve(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		return helper.BadRequest(c, "Report ID not valid")
+		return helper.BadRequest(c, "report id is not valid")
 	}
 
 	officerUserID := helper.GetUserID(c)
@@ -213,7 +213,7 @@ func (rc *ReportController) Reject(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
-		return helper.BadRequest(c, "Report ID not valid")
+		return helper.BadRequest(c, "report id is not valid")
 	}
 
 	adminUserID := helper.GetUserID(c)
@@ -233,4 +233,25 @@ func (rc *ReportController) Reject(c echo.Context) error {
 	}
 
 	return helper.Success(c, "success reject report", nil)
+}
+
+func (rc *ReportController) Verify(c echo.Context) error {
+	idParam := c.Param("id")
+	id64, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "report id is not valid")
+	}
+
+	userID := helper.GetUserID(c)
+	role := helper.GetUserRole(c)
+
+	var input service.UpdateStatusReportInput
+	_ = c.Bind(&input)
+
+	err = rc.svc.VerifyReport(uint(id64), userID, role, input)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success verified report", nil)
 }
