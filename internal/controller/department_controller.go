@@ -44,7 +44,28 @@ func (dc *DepartmentController) GetByID(c echo.Context) error {
 }
 
 func (dc *DepartmentController) Create(c echo.Context) error {
-	return nil
+	role := helper.GetUserRole(c)
+	// test
+	if role == "" {
+		role = "super_admin"
+	}
+
+	var input service.DepartmentInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body is not valid")
+	}
+
+	dept, err := dc.svc.CreateDepartment(role, input)
+	if err != nil {
+		if err.Error() == "departement code required" ||
+			err.Error() == "departement name required" ||
+			err.Error() == "department code or name already used" {
+			return helper.BadRequest(c, err.Error())
+		}
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Created(c, "department created", dept)
 }
 
 func (dc *DepartmentController) Update(c echo.Context) error {

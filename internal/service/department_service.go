@@ -9,13 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type CreateDepartmentInput struct {
-	Code        string `json:"code"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-type UpdateDepartmentInput struct {
+type DepartmentInput struct {
 	Code        string `json:"code"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -28,8 +22,8 @@ type ToggleDepartmentStatusInput struct {
 type DepartmentService interface {
 	GetAllDepartments(isOnlyActive bool) ([]entity.Department, error)
 	GetDepartmentByID(id uint) (*entity.Department, error)
-	CreateDepartment(role string, input CreateDepartmentInput) (*entity.Department, error)
-	UpdateDepartment(id uint, role string, input UpdateDepartmentInput) (*entity.Department, error)
+	CreateDepartment(role string, input DepartmentInput) (*entity.Department, error)
+	UpdateDepartment(id uint, role string, input DepartmentInput) (*entity.Department, error)
 	ToggleDepartmentStatus(id uint, role string, input ToggleDepartmentStatusInput) error
 }
 
@@ -58,11 +52,42 @@ func (ds *departmentService) GetDepartmentByID(id uint) (*entity.Department, err
 	return dept, nil
 }
 
-func (ds *departmentService) CreateDepartment(role string, input CreateDepartmentInput) (*entity.Department, error) {
-	return &entity.Department{}, nil
+func (ds *departmentService) CreateDepartment(role string, input DepartmentInput) (*entity.Department, error) {
+	if role != "super_admin" {
+		return nil, errs.ErrForbidden
+	}
+
+	if input.Code == "" {
+		return nil, errors.New("departement code required")
+	}
+	if input.Name == "" {
+		return nil, errors.New("departement name required")
+	}
+
+	exists, err := ds.repo.CheckCodeOrNameExists(input.Code, input.Name, 0)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.New("department code or name already used")
+	}
+
+	dept := entity.Department{
+		Code:        input.Code,
+		Name:        input.Name,
+		Description: input.Description,
+		IsActive:    true,
+	}
+
+	err = ds.repo.Create(&dept)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dept, nil
 }
 
-func (ds *departmentService) UpdateDepartment(id uint, role string, input UpdateDepartmentInput) (*entity.Department, error) {
+func (ds *departmentService) UpdateDepartment(id uint, role string, input DepartmentInput) (*entity.Department, error) {
 	return &entity.Department{}, nil
 }
 
