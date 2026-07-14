@@ -199,7 +199,7 @@ func (rc *ReportController) Start(c echo.Context) error {
 
 	// test officer login
 	if officerUserID == 0 {
-		officerUserID = 1
+		officerUserID = 3
 	}
 	if role == "" {
 		role = "officer"

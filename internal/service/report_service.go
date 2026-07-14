@@ -100,6 +100,7 @@ type UpdateStatusReportInput struct {
 	Notes string `json:"notes"`
 }
 
+// helper
 func ToReportResponse(r *entity.Report) *ReportResponse {
 	var userResp *UserReportResponse
 	if r.User != nil {
@@ -122,6 +123,38 @@ func ToReportResponse(r *entity.Report) *ReportResponse {
 		Category:        r.Category,
 		Attachments:     r.Attachments,
 		Histories:       r.Histories,
+	}
+}
+
+// helper send email per status update
+func (rs *reportService) sendStatusEmailAsync(report *entity.Report, status string, notes string) {
+	if report != nil && report.User != nil && report.User.Email != "" {
+		go func(toEmail, toName, title string, id int64, currentStatus, currentNotes string) {
+			err := rs.mailer.SendReportStatusEmail(
+				toEmail,
+				toName,
+				title,
+				id,
+				currentStatus,
+				currentNotes,
+			)
+			if err != nil {
+				logger.Log.Error(
+					"failed to send update report email",
+					"tag", constant.LogTagMailjet,
+					"email", toEmail,
+					"status", currentStatus,
+					"error", err,
+				)
+			}
+		}(
+			report.User.Email,
+			report.User.Name,
+			report.Title,
+			report.ID,
+			status,
+			notes,
+		)
 	}
 }
 
@@ -339,7 +372,14 @@ func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role st
 		notes = "Report already assigned to field officer."
 	}
 
-	return rs.repo.AssignStaff(reportID, input.StaffID, adminUserID, notes)
+	err = rs.repo.AssignStaff(reportID, input.StaffID, adminUserID, notes)
+	if err != nil {
+		return err
+	}
+
+	rs.sendStatusEmailAsync(report, string(entity.StatusAssigned), notes)
+
+	return nil
 }
 
 func (rs *reportService) StartReport(reportID int64, officerUserID int64, role string, notes string) error {
@@ -372,13 +412,20 @@ func (rs *reportService) StartReport(reportID int64, officerUserID int64, role s
 		notes = "Officer start handle the report"
 	}
 
-	return rs.repo.UpdateStatusWithHistory(
+	err = rs.repo.UpdateStatusWithHistory(
 		reportID,
 		entity.StatusInProgress,
 		officerUserID,
 		notes,
 		false,
 	)
+	if err != nil {
+		return err
+	}
+
+	rs.sendStatusEmailAsync(report, string(entity.StatusInProgress), notes)
+
+	return nil
 }
 
 func (rs *reportService) ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error {
@@ -419,7 +466,13 @@ func (rs *reportService) ResolveReport(reportID int64, officerUserID int64, role
 		notes = "Report mark as solved by officer"
 	}
 
-	return rs.repo.ResolveReport(reportID, officerUserID, notes, resolutionAttachments)
+	err = rs.repo.ResolveReport(reportID, officerUserID, notes, resolutionAttachments)
+	if err != nil {
+		return err
+	}
+
+	rs.sendStatusEmailAsync(report, string(entity.StatusResolved), notes)
+	return nil
 }
 
 func (rs *reportService) RejectReport(reportID int64, adminUserID int64, role string, input UpdateStatusReportInput) error {
@@ -449,11 +502,18 @@ func (rs *reportService) RejectReport(reportID int64, adminUserID int64, role st
 		return errs.ErrReportAlreadyRejected
 	}
 
-	return rs.repo.UpdateStatusWithHistory(
+	err = rs.repo.UpdateStatusWithHistory(
 		reportID,
 		entity.StatusRejected,
 		adminUserID,
 		input.Notes,
 		false,
 	)
+
+	if err != nil {
+		return err
+	}
+
+	rs.sendStatusEmailAsync(report, string(entity.StatusRejected), input.Notes)
+	return nil
 }
