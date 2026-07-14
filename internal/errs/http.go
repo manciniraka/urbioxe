@@ -13,7 +13,8 @@ func StatusCode(err error) int {
 	case errors.Is(err, ErrBadRequest),
 		errors.Is(err, ErrPasswordMismatch),
 		errors.Is(err, ErrSamePassword),
-		errors.Is(err, ErrReportNotAssigned):
+		errors.Is(err, ErrReportNotAssigned),
+		errors.Is(err, ErrCategoryAlreadyExists):
 		return http.StatusBadRequest
 
 	// 401 Unauthorized

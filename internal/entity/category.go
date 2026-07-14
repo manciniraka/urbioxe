@@ -1,6 +1,8 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 type Category struct {
 	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
