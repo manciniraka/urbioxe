@@ -11,10 +11,10 @@ import (
 
 type CategoryService interface {
 	GetAllCategories(isOnlyActive bool) ([]entity.Category, error)
-	GetCategoryByID(id int64) (*entity.Category, error)
+	GetCategoryByID(id uint) (*entity.Category, error)
 	CreateCategory(role string, input CreateCategoryInput) (*entity.Category, error)
-	UpdateCategory(id int64, role string, input UpdateCategoryInput) (*entity.Category, error)
-	ToggleCategoryStatus(id int64, role string, input ToggleCategoryStatusInput) error
+	UpdateCategory(id uint, role string, input UpdateCategoryInput) (*entity.Category, error)
+	ToggleCategoryStatus(id uint, role string, input ToggleCategoryStatusInput) error
 }
 
 type categoryService struct {
@@ -28,13 +28,13 @@ func NewCategoryService(repo repository.CategoryRepository) CategoryService {
 }
 
 type CreateCategoryInput struct {
-	DepartmentID int64  `json:"department_id"`
+	DepartmentID uint   `json:"department_id"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 }
 
 type UpdateCategoryInput struct {
-	DepartmentID int64  `json:"department_id"`
+	DepartmentID uint   `json:"department_id"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 }
@@ -47,7 +47,7 @@ func (cs *categoryService) GetAllCategories(isOnlyActive bool) ([]entity.Categor
 	return cs.repo.FindAll(isOnlyActive)
 }
 
-func (cs *categoryService) GetCategoryByID(id int64) (*entity.Category, error) {
+func (cs *categoryService) GetCategoryByID(id uint) (*entity.Category, error) {
 	category, err := cs.repo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -93,7 +93,7 @@ func (cs *categoryService) CreateCategory(role string, input CreateCategoryInput
 	return &category, nil
 }
 
-func (cs *categoryService) UpdateCategory(id int64, role string, input UpdateCategoryInput) (*entity.Category, error) {
+func (cs *categoryService) UpdateCategory(id uint, role string, input UpdateCategoryInput) (*entity.Category, error) {
 	if role != "super_admin" && role != "department_admin" {
 		return nil, errs.ErrForbidden
 	}
@@ -133,7 +133,7 @@ func (cs *categoryService) UpdateCategory(id int64, role string, input UpdateCat
 	return category, nil
 }
 
-func (cs *categoryService) ToggleCategoryStatus(id int64, role string, input ToggleCategoryStatusInput) error {
+func (cs *categoryService) ToggleCategoryStatus(id uint, role string, input ToggleCategoryStatusInput) error {
 	if role != "super_admin" && role != "department_admin" {
 		return errs.ErrForbidden
 	}

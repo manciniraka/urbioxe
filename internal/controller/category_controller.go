@@ -30,12 +30,12 @@ func (cc *CategoryController) GetAll(c echo.Context) error {
 
 func (cc *CategoryController) GetByID(c echo.Context) error {
 	idParam := c.Param("id")
-	id, err := strconv.ParseInt(idParam, 10, 64)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return helper.BadRequest(c, "category id is not valid")
 	}
 
-	category, err := cc.svc.GetCategoryByID(id)
+	category, err := cc.svc.GetCategoryByID(uint(id))
 	if err != nil {
 		return helper.HandleError(c, err)
 	}
@@ -44,11 +44,7 @@ func (cc *CategoryController) GetByID(c echo.Context) error {
 }
 
 func (cc *CategoryController) Create(c echo.Context) error {
-	role, _ := c.Get("role").(string)
-	// test without login
-	if role == "" {
-		role = "department_admin"
-	}
+	role := helper.GetUserRole(c)
 
 	var input service.CreateCategoryInput
 	if err := c.Bind(&input); err != nil {
@@ -68,22 +64,19 @@ func (cc *CategoryController) Create(c echo.Context) error {
 
 func (cc *CategoryController) Update(c echo.Context) error {
 	idParam := c.Param("id")
-	id, err := strconv.ParseInt(idParam, 10, 64)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return helper.BadRequest(c, "category id is not valid")
 	}
 
-	role, _ := c.Get("role").(string)
-	if role == "" {
-		role = "department_admin"
-	}
+	role := helper.GetUserRole(c)
 
 	var input service.UpdateCategoryInput
 	if err := c.Bind(&input); err != nil {
 		return helper.BadRequest(c, "format body is not valid")
 	}
 
-	category, err := cc.svc.UpdateCategory(id, role, input)
+	category, err := cc.svc.UpdateCategory(uint(id), role, input)
 	if err != nil {
 		if err.Error() == "department_id required" ||
 			err.Error() == "category name required" {
@@ -97,22 +90,19 @@ func (cc *CategoryController) Update(c echo.Context) error {
 
 func (cc *CategoryController) ToggleStatus(c echo.Context) error {
 	idParam := c.Param("id")
-	id, err := strconv.ParseInt(idParam, 10, 64)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return helper.BadRequest(c, "category id is not valid")
 	}
 
-	role, _ := c.Get("role").(string)
-	if role == "" {
-		role = "department_admin"
-	}
+	role := helper.GetUserRole(c)
 
 	var input service.ToggleCategoryStatusInput
 	if err := c.Bind(&input); err != nil {
 		return helper.BadRequest(c, "format body is not valid")
 	}
 
-	err = cc.svc.ToggleCategoryStatus(id, role, input)
+	err = cc.svc.ToggleCategoryStatus(uint(id), role, input)
 	if err != nil {
 		return helper.HandleError(c, err)
 	}

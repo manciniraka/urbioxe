@@ -5,8 +5,8 @@ import (
 )
 
 type Category struct {
-	ID           int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	DepartmentID int64     `gorm:"not null" json:"department_id"`
+	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	DepartmentID uint      `gorm:"not null" json:"department_id"`
 	Name         string    `gorm:"type:varchar(100);not null" json:"name"`
 	Description  string    `gorm:"type:text" json:"description"`
 	IsActive     bool      `gorm:"default:true" json:"is_active"`
@@ -17,7 +17,7 @@ type Category struct {
 }
 
 type Department struct {
-	ID          int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
 	Code        string    `gorm:"type:varchar(50);not null" json:"code"`
 	Description string    `gorm:"type:text" json:"description"`

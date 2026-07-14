@@ -7,11 +7,11 @@ import (
 
 type CategoryRepository interface {
 	FindAll(isOnlyActive bool) ([]entity.Category, error)
-	FindByID(id int64) (*entity.Category, error)
+	FindByID(id uint) (*entity.Category, error)
 	Create(category *entity.Category) error
 	Update(category *entity.Category) error
-	UpdateStatus(id int64, isActive bool) error
-	CheckNameExistsInDepartment(departmentID int64, name string, excludeID int64) (bool, error)
+	UpdateStatus(id uint, isActive bool) error
+	CheckNameExistsInDepartment(departmentID uint, name string, excludeID uint) (bool, error)
 }
 
 type categoryRepository struct {
@@ -39,7 +39,7 @@ func (cr *categoryRepository) FindAll(isOnlyActive bool) ([]entity.Category, err
 	return categories, nil
 }
 
-func (cr *categoryRepository) FindByID(id int64) (*entity.Category, error) {
+func (cr *categoryRepository) FindByID(id uint) (*entity.Category, error) {
 	var category entity.Category
 
 	err := cr.db.Model(&entity.Category{}).
@@ -61,13 +61,13 @@ func (cr *categoryRepository) Update(category *entity.Category) error {
 	return cr.db.Save(category).Error
 }
 
-func (cr *categoryRepository) UpdateStatus(id int64, isActive bool) error {
+func (cr *categoryRepository) UpdateStatus(id uint, isActive bool) error {
 	return cr.db.Model(&entity.Category{}).
 		Where("id = ?", id).
 		Update("is_active", isActive).Error
 }
 
-func (cr *categoryRepository) CheckNameExistsInDepartment(departmentID int64, name string, excludeID int64) (bool, error) {
+func (cr *categoryRepository) CheckNameExistsInDepartment(departmentID uint, name string, excludeID uint) (bool, error) {
 	var count int64
 
 	query := cr.db.Model(&entity.Category{}).
