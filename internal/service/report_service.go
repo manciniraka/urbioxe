@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"mime/multipart"
 	"time"
 
@@ -126,6 +128,13 @@ func ToReportResponse(r *entity.Report) *ReportResponse {
 	}
 }
 
+func GenerateReportNumber(districtID uint, categoryID uint) string {
+	now := time.Now()
+	fullTimestamp := now.Format("20060102150405")
+	randomNumber := rand.Intn(900) + 100
+	return fmt.Sprintf("REP-%s-D%03d-C%03d-%d", fullTimestamp, districtID, categoryID, randomNumber)
+}
+
 // helper send email per status update
 func (rs *reportService) sendStatusEmailAsync(report *entity.Report, status string, notes string) {
 	if report != nil && report.User != nil && report.User.Email != "" {
@@ -175,6 +184,7 @@ func (rs *reportService) CreateReport(reportInput entity.Report, files []*multip
 
 	reportInput.Attachments = attachments
 	reportInput.Status = entity.StatusPending
+	reportInput.ReportNumber = GenerateReportNumber(reportInput.IncidentDistrictID, reportInput.CategoryID)
 
 	reportInput.Histories = []entity.ReportHistory{
 		{

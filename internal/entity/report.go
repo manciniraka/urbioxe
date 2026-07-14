@@ -29,7 +29,7 @@ type Report struct {
 	AssignedStaffID    *uint          `gorm:"default:null"`
 	Title              string         `gorm:"type:varchar(255);not null"`
 	Description        string         `gorm:"type:text;not null"`
-	ReportNumber       *string        `gorm:"type:varchar(50);unique;default:null"`
+	ReportNumber       string         `gorm:"type:varchar(50);unique;default:null"`
 	Latitude           *float64       `gorm:"type:double precision;default:null"`
 	Longitude          *float64       `gorm:"type:double precision;default:null"`
 	AddressLandmark    string         `gorm:"type:text"`
