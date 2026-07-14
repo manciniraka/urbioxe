@@ -10,7 +10,11 @@ import (
 type NewsRepository interface {
 	GetAll(ctx context.Context) ([]entity.RegionalNews, error)
 	GetByID(ctx context.Context, id int64) (*entity.RegionalNews, error)
-	Create(ctx context.Context, news *entity.CreateNewsRequest) (*entity.RegionalNews, error)
+	Create(
+		ctx context.Context, 
+		createdBy int64,
+		news *entity.CreateNewsRequest,
+		) (*entity.RegionalNews, error)
 	Update(ctx context.Context, id int64, news *entity.UpdateNewsRequest) (*entity.RegionalNews, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -117,7 +121,11 @@ func (r *newsRepository) GetByID(ctx context.Context, id int64) (*entity.Regiona
 	return &news, nil
 }
 
-func (r *newsRepository) Create(ctx context.Context, news *entity.CreateNewsRequest) (*entity.RegionalNews, error) {
+func (r *newsRepository) Create(
+	ctx context.Context, 
+	createdBy int64, 
+	news *entity.CreateNewsRequest,
+	) (*entity.RegionalNews, error) {
 	query := `
 		INSERT INTO regional_news (
 			department_id,
@@ -127,7 +135,8 @@ func (r *newsRepository) Create(ctx context.Context, news *entity.CreateNewsRequ
 			category,
 			banner_url,
 			target_scope,
-			is_pinned
+			is_pinned,
+			created_by,
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING
 			id,
@@ -156,11 +165,13 @@ func (r *newsRepository) Create(ctx context.Context, news *entity.CreateNewsRequ
 		news.BannerURL,
 		news.TargetScope,
 		news.IsPinned,
+		createdBy,
 	).Scan(
 		&result.ID,
 		&result.DepartmentID,
 		&result.DistrictID,
 		&result.Title,
+		&result.Content,
 		&result.Category,
 		&result.BannerURL,
 		&result.TargetScope,
