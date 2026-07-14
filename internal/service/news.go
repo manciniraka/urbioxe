@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/repository"
@@ -38,7 +40,14 @@ func (s *newsService) GetByID(
 	ctx context.Context,
 	id int64,
 ) (*entity.RegionalNews, error) {
-	return s.newsRepository.GetByID(ctx, id)
+	news, err := s.newsRepository.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
+	return news, nil
 }
 
 func (s *newsService) Create(
@@ -64,5 +73,12 @@ func (s *newsService) Delete(
 	ctx context.Context,
 	id int64,
 ) error {
-	return s.newsRepository.Delete(ctx, id)
+	err := s.newsRepository.Delete(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return sql.ErrNoRows
+		}
+		return err
+	}
+	return nil
 }
