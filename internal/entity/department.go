@@ -10,4 +10,6 @@ type Department struct {
 	IsActive    bool      `gorm:"default:true" json:"is_active"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+
+	Categories []Category `gorm:"foreignKey:DepartmentID" json:"categories,omitempty"`
 }

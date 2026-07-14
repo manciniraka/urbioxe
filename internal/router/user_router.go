@@ -2,21 +2,30 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/manciniraka/urbioxe/internal/config"
+	"github.com/manciniraka/urbioxe/internal/controller"
+	"github.com/manciniraka/urbioxe/internal/middleware"
+	"github.com/manciniraka/urbioxe/internal/repository"
+	"github.com/manciniraka/urbioxe/internal/service"
 	"gorm.io/gorm"
 )
 
 func RegisterUserRoutes(
 	e *echo.Echo,
 	db *gorm.DB,
+	cfg *config.Config,
 ) {
 
-	// TODO:
-	// repository
-	// service
-	// controller
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
+	userController := controller.NewUserController(userService)
 
-	user := e.Group("/users")
+	users := e.Group(
+		"/users",
+		middleware.AuthMiddleware(cfg),
+	)
 
-	_ = user
-	_ = db
+	users.GET("/profile", userController.GetProfile)
+	users.PUT("/profile", userController.UpdateProfile)
+	users.PUT("/change-password", userController.ChangePassword)
 }
