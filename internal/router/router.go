@@ -33,7 +33,7 @@ func InitRouter(
 	RegisterCategoryRoutes(e, db)
 
 	// Staff
-	RegisterStaffRoutes(e, db)
+	RegisterStaffRoutes(e, db, cfg)
 
 	// Reports
 	RegisterReportRoutes(e, db)
