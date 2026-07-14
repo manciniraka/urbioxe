@@ -184,7 +184,8 @@ func (rs *reportService) CreateReport(reportInput entity.Report, files []*multip
 
 	reportInput.Attachments = attachments
 	reportInput.Status = entity.StatusPending
-	reportInput.ReportNumber = GenerateReportNumber(reportInput.IncidentDistrictID, reportInput.CategoryID)
+	reportNumber := GenerateReportNumber(reportInput.IncidentDistrictID, reportInput.CategoryID)
+	reportInput.ReportNumber = &reportNumber
 
 	reportInput.Histories = []entity.ReportHistory{
 		{
