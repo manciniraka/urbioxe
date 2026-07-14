@@ -1,10 +1,10 @@
 package router
 
 import (
-	"os"
-
 	"github.com/labstack/echo/v4"
 	"github.com/manciniraka/urbioxe/external/cloudinary"
+	"github.com/manciniraka/urbioxe/external/mailjet"
+	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/controller"
 	"github.com/manciniraka/urbioxe/internal/repository"
 	"github.com/manciniraka/urbioxe/internal/service"
@@ -14,18 +14,30 @@ import (
 func RegisterReportRoutes(
 	e *echo.Echo,
 	db *gorm.DB,
+	cfg *config.Config,
 ) {
-	cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-	apiKey := os.Getenv("CLOUDINARY_API_KEY")
-	apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
+	cloudName := cfg.CloudinaryCloudName
+	apiKey := cfg.CloudinaryAPIKey
+	apiSecret := cfg.CloudinaryAPISecret
 
 	cldService := cloudinary.NewCloudinaryService(
 		cloudName,
 		apiKey,
 		apiSecret,
 	)
+
+	mailer := mailjet.New(
+		mailjet.Config{
+			BaseURL:     cfg.MailjetBaseURL,
+			APIKey:      cfg.MailjetAPIKey,
+			SecretKey:   cfg.MailjetSecretKey,
+			SenderEmail: cfg.MailjetSenderEmail,
+			SenderName:  cfg.MailjetSenderName,
+		},
+	)
+
 	reportRepo := repository.NewReportRepository(db)
-	reportSvc := service.NewReportService(reportRepo, cldService)
+	reportSvc := service.NewReportService(reportRepo, cldService, mailer)
 	reportCtrl := controller.NewReportController(reportSvc)
 
 	report := e.Group("/reports")

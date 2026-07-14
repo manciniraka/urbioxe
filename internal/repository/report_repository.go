@@ -35,7 +35,14 @@ type ReportFilter struct {
 }
 
 func (rr *reportRepository) Create(report *entity.Report) error {
-	return rr.db.Create(report).Error
+	if err := rr.db.Create(report).Error; err != nil {
+		return err
+	}
+
+	return rr.db.Preload("User").
+		Preload("Category").
+		Preload("Attachments").
+		First(report, report.ID).Error
 }
 
 func (rr *reportRepository) UpdateStatusWithHistory(reportID int64, newStatus entity.ReportStatus, actorID int64, notes string, isInternal bool) error {

@@ -3,19 +3,23 @@ package service
 import (
 	"errors"
 	"mime/multipart"
+	"time"
 
 	"github.com/manciniraka/urbioxe/external/cloudinary"
+	"github.com/manciniraka/urbioxe/external/mailjet"
+	"github.com/manciniraka/urbioxe/internal/constant"
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/errs"
+	"github.com/manciniraka/urbioxe/internal/logger"
 	"github.com/manciniraka/urbioxe/internal/repository"
 	"gorm.io/gorm"
 )
 
 type ReportService interface {
-	CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error)
+	CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*ReportResponse, error)
 	GetAllReports(param GetReportsParam) (*ReportListResponse, error)
-	GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error)
-	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error)
+	GetReportByID(reportID int64, userID int64, role string) (*ReportResponse, error)
+	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*ReportResponse, error)
 	AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error
 	StartReport(reportID int64, officerUserID int64, role string, notes string) error
 	ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error
@@ -25,15 +29,18 @@ type ReportService interface {
 type reportService struct {
 	repo   repository.ReportRepository
 	cldSvc cloudinary.CloudinaryService
+	mailer *mailjet.Client
 }
 
 func NewReportService(
 	reportRepo repository.ReportRepository,
 	cldSvc cloudinary.CloudinaryService,
+	mailer *mailjet.Client,
 ) ReportService {
 	return &reportService{
 		repo:   reportRepo,
 		cldSvc: cldSvc,
+		mailer: mailer,
 	}
 }
 
@@ -44,6 +51,26 @@ type GetReportsParam struct {
 	Status     string
 	Page       int
 	Limit      int
+}
+
+type UserReportResponse struct {
+	ID    uint   `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+type ReportResponse struct {
+	ID              int64                     `json:"id"`
+	Title           string                    `json:"title"`
+	Description     string                    `json:"description"`
+	AddressLandmark string                    `json:"address_landmark"`
+	Status          entity.ReportStatus       `json:"status"`
+	Priority        entity.ReportPriority     `json:"priority"`
+	CreatedAt       time.Time                 `json:"created_at"`
+	User            *UserReportResponse       `json:"user,omitempty"`
+	Category        *entity.Category          `json:"category,omitempty"`
+	Attachments     []entity.ReportAttachment `json:"attachments,omitempty"`
+	Histories       []entity.ReportHistory    `json:"histories,omitempty"`
 }
 
 type ReportListResponse struct {
@@ -73,7 +100,32 @@ type UpdateStatusReportInput struct {
 	Notes string `json:"notes"`
 }
 
-func (rs *reportService) CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*entity.Report, error) {
+func ToReportResponse(r *entity.Report) *ReportResponse {
+	var userResp *UserReportResponse
+	if r.User != nil {
+		userResp = &UserReportResponse{
+			ID:    r.User.ID,
+			Name:  r.User.Name,
+			Email: r.User.Email,
+		}
+	}
+
+	return &ReportResponse{
+		ID:              r.ID,
+		Title:           r.Title,
+		Description:     r.Description,
+		AddressLandmark: r.AddressLandmark,
+		Status:          r.Status,
+		Priority:        r.Priority,
+		CreatedAt:       r.CreatedAt,
+		User:            userResp,
+		Category:        r.Category,
+		Attachments:     r.Attachments,
+		Histories:       r.Histories,
+	}
+}
+
+func (rs *reportService) CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*ReportResponse, error) {
 	var attachments []entity.ReportAttachment
 
 	for _, fileHeader := range files {
@@ -105,7 +157,51 @@ func (rs *reportService) CreateReport(reportInput entity.Report, files []*multip
 		return nil, err
 	}
 
-	return &reportInput, nil
+	formattedDate := reportInput.CreatedAt.Format("02 January 2006 15:04 MST")
+
+	categoryName := "Umum"
+	if reportInput.Category != nil {
+		categoryName = reportInput.Category.Name
+	}
+
+	if reportInput.User != nil && reportInput.User.Email != "" {
+		go func(toEmail, toName string, id int64, title, category, address, dateStr string) {
+			errMail := rs.mailer.SendReportCreatedEmail(
+				toEmail,
+				toName,
+				id,
+				title,
+				category,
+				address,
+				dateStr,
+			)
+			if errMail != nil {
+				logger.Log.Error(
+					"failed to send create report email",
+					"tag", constant.LogTagMailjet,
+					"email", toEmail,
+					"error", errMail,
+				)
+			}
+		}(
+			reportInput.User.Email,
+			reportInput.User.Name,
+			reportInput.ID,
+			reportInput.Title,
+			categoryName,
+			reportInput.AddressLandmark,
+			formattedDate,
+		)
+	} else {
+		logger.Log.Error(
+			"skip to send create report email",
+			"tag", constant.LogTagMailjet,
+			"email", reportInput.User.Email,
+			"error", err,
+		)
+	}
+
+	return ToReportResponse(&reportInput), nil
 }
 
 func (rs *reportService) GetAllReports(param GetReportsParam) (*ReportListResponse, error) {
@@ -146,7 +242,7 @@ func (rs *reportService) GetAllReports(param GetReportsParam) (*ReportListRespon
 	}, nil
 }
 
-func (rs *reportService) GetReportByID(reportID int64, userID int64, role string) (*entity.Report, error) {
+func (rs *reportService) GetReportByID(reportID int64, userID int64, role string) (*ReportResponse, error) {
 	report, err := rs.repo.FindByID(reportID, role)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -159,10 +255,10 @@ func (rs *reportService) GetReportByID(reportID int64, userID int64, role string
 		return nil, errs.ErrReportForbidden
 	}
 
-	return report, nil
+	return ToReportResponse(report), nil
 }
 
-func (rs *reportService) UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*entity.Report, error) {
+func (rs *reportService) UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*ReportResponse, error) {
 	existingReport, err := rs.repo.FindByID(reportID, "citizen")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -206,7 +302,7 @@ func (rs *reportService) UpdateReport(reportID int64, userID int64, input Update
 		return nil, err
 	}
 
-	return existingReport, nil
+	return ToReportResponse(existingReport), nil
 }
 
 func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error {

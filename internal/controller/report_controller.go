@@ -35,7 +35,7 @@ func (rc *ReportController) Create(c echo.Context) error {
 	userID, _ := c.Get("user_id").(int64)
 	// test if not login
 	if userID == 0 {
-		userID = 1
+		userID = 6
 	}
 
 	files := form.File["images"]
