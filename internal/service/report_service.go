@@ -396,12 +396,15 @@ func (rs *reportService) StartReport(reportID uint, officerUserID uint, role str
 	}
 
 	if role == "officer" {
-		if officerUserID != *report.AssignedStaffID {
-			return errs.ErrReportUpdateForbidden
-		}
 		if report.AssignedStaffID == nil {
 			return errs.ErrReportNotAssigned
 		}
+		// TODO
+		// ! Apply on all updated status
+		// ? cant use officerUserID. Have to access GetStaffByUserId and get staff id where userId = officerUserID
+		// if officerUserID != *report.AssignedStaffID {
+		// 	return errs.ErrReportUpdateForbidden
+		// }
 	}
 
 	if report.Status != entity.StatusAssigned {
