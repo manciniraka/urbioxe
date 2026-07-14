@@ -52,6 +52,8 @@ func RegisterReportRoutes(
 	report.PATCH("/:id/start", reportCtrl.Start, middleware.RequireRoles("officer"))
 	report.PATCH("/:id/resolve", reportCtrl.Resolve, middleware.RequireRoles("officer"))
 	report.PATCH("/:id/reject", reportCtrl.Reject, middleware.RequireRoles("department_admin", "super_admin"))
+	report.PATCH("/:id/verify", reportCtrl.Verify, middleware.RequireRoles("department_admin", "super_admin"))
+	report.PATCH("/:id/priority", reportCtrl.UpdatePriority, middleware.RequireRoles("department_admin", "super_admin"))
 
 	_ = report
 	_ = db
