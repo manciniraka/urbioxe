@@ -150,6 +150,9 @@ func (rc *ReportController) Assign(c echo.Context) error {
 
 	err = rc.svc.AssignReport(uint(reportID), adminUserID, role, input)
 	if err != nil {
+		if err.Error() == "staff_id required" {
+			return helper.BadRequest(c, err.Error())
+		}
 		return helper.HandleError(c, err)
 	}
 
@@ -197,6 +200,9 @@ func (rc *ReportController) Resolve(c echo.Context) error {
 
 	err = rc.svc.ResolveReport(uint(reportID), officerUserID, role, notes, files)
 	if err != nil {
+		if err.Error() == "upload minimal 1 image" {
+			return helper.BadRequest(c, err.Error())
+		}
 		return helper.HandleError(c, err)
 	}
 
@@ -220,6 +226,9 @@ func (rc *ReportController) Reject(c echo.Context) error {
 
 	err = rc.svc.RejectReport(uint(reportID), adminUserID, role, input)
 	if err != nil {
+		if err.Error() == "notes required!" {
+			return helper.BadRequest(c, err.Error())
+		}
 		return helper.HandleError(c, err)
 	}
 

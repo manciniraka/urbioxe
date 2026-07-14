@@ -29,20 +29,23 @@ type ReportService interface {
 }
 
 type reportService struct {
-	repo   repository.ReportRepository
-	cldSvc cloudinary.CloudinaryService
-	mailer *mailjet.Client
+	repo      repository.ReportRepository
+	staffRepo repository.StaffRepository
+	cldSvc    cloudinary.CloudinaryService
+	mailer    *mailjet.Client
 }
 
 func NewReportService(
 	reportRepo repository.ReportRepository,
+	staffRepo repository.StaffRepository,
 	cldSvc cloudinary.CloudinaryService,
 	mailer *mailjet.Client,
 ) ReportService {
 	return &reportService{
-		repo:   reportRepo,
-		cldSvc: cldSvc,
-		mailer: mailer,
+		repo:      reportRepo,
+		staffRepo: staffRepo,
+		cldSvc:    cldSvc,
+		mailer:    mailer,
 	}
 }
 
@@ -406,16 +409,19 @@ func (rs *reportService) StartReport(reportID uint, officerUserID uint, role str
 		return err
 	}
 
+	staff, err := rs.staffRepo.FindStaffByUserID(officerUserID)
+	if err != nil {
+		return err
+	}
+
 	if role == "officer" {
 		if report.AssignedStaffID == nil {
 			return errs.ErrReportNotAssigned
 		}
-		// TODO
-		// ! Apply on all updated status
-		// ? cant use officerUserID. Have to access GetStaffByUserId and get staff id where userId = officerUserID
-		// if officerUserID != *report.AssignedStaffID {
-		// 	return errs.ErrReportUpdateForbidden
-		// }
+
+		if staff.ID != *report.AssignedStaffID {
+			return errs.ErrReportUpdateForbidden
+		}
 	}
 
 	if report.Status != entity.StatusAssigned {
@@ -460,6 +466,21 @@ func (rs *reportService) ResolveReport(reportID uint, officerUserID uint, role s
 			return errs.ErrReportNotFound
 		}
 		return err
+	}
+
+	staff, err := rs.staffRepo.FindStaffByUserID(officerUserID)
+	if err != nil {
+		return err
+	}
+
+	if role == "officer" {
+		if report.AssignedStaffID == nil {
+			return errs.ErrReportNotAssigned
+		}
+
+		if staff.ID != *report.AssignedStaffID {
+			return errs.ErrReportUpdateForbidden
+		}
 	}
 
 	if report.Status != entity.StatusInProgress {

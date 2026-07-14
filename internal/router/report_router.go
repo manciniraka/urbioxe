@@ -37,8 +37,10 @@ func RegisterReportRoutes(
 		},
 	)
 
+	staffRepo := repository.NewStaffRepository(db)
+
 	reportRepo := repository.NewReportRepository(db)
-	reportSvc := service.NewReportService(reportRepo, cldService, mailer)
+	reportSvc := service.NewReportService(reportRepo, staffRepo, cldService, mailer)
 	reportCtrl := controller.NewReportController(reportSvc)
 
 	report := e.Group("/reports", middleware.AuthMiddleware(cfg))
