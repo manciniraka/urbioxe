@@ -246,7 +246,9 @@ func (rc *ReportController) Verify(c echo.Context) error {
 	role := helper.GetUserRole(c)
 
 	var input service.UpdateStatusReportInput
-	_ = c.Bind(&input)
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
 
 	err = rc.svc.VerifyReport(uint(id64), userID, role, input)
 	if err != nil {
@@ -254,4 +256,30 @@ func (rc *ReportController) Verify(c echo.Context) error {
 	}
 
 	return helper.Success(c, "success verified report", nil)
+}
+
+func (rc *ReportController) UpdatePriority(c echo.Context) error {
+	idParam := c.Param("id")
+	id64, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "report id is not valid")
+	}
+
+	userID := helper.GetUserID(c)
+	role := helper.GetUserRole(c)
+
+	var input service.UpdatePriorityInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body not valid")
+	}
+
+	err = rc.svc.UpdatePriority(uint(id64), userID, role, input)
+	if err != nil {
+		if err.Error() == "report priority required" {
+			return helper.BadRequest(c, err.Error())
+		}
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success update priority", nil)
 }

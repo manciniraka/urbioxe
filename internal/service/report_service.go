@@ -576,6 +576,9 @@ func (rs *reportService) VerifyReport(reportID uint, adminUserID uint, role stri
 
 	report, err := rs.repo.FindByID(reportID, role)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
 		return err
 	}
 
@@ -599,6 +602,33 @@ func (rs *reportService) VerifyReport(reportID uint, adminUserID uint, role stri
 }
 
 func (rs *reportService) UpdatePriority(reportID uint, adminUserID uint, role string, input UpdatePriorityInput) error {
+	if role != "admin" && role != "super_admin" {
+		return errs.ErrForbidden
+	}
+
+	if input.Priority == "" {
+		return errors.New("report priority required")
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
+		return err
+	}
+
+	oldPriority := report.Priority
+	report.Priority = input.Priority
+
+	err = rs.repo.Update(report)
+	if err != nil {
+		return err
+	}
+
+	notes := fmt.Sprintf("Priority updated from '%s' to '%s'. Notes: %s", oldPriority, input.Priority, input.Notes)
+	rs.repo.UpdatePriorityWithHistory(reportID, report.Status, report.Priority, adminUserID, notes)
+
 	return nil
 }
 

@@ -13,6 +13,7 @@ type ReportRepository interface {
 	Update(report *entity.Report) error
 	AssignStaff(reportID uint, staffID uint, actorID uint, notes string) error
 	ResolveReport(reportID uint, actorID uint, notes string, attachments []entity.ReportAttachment) error
+	UpdatePriorityWithHistory(reportID uint, status entity.ReportStatus, newPriority entity.ReportPriority, actorID uint, notes string) error
 }
 
 type reportRepository struct {
@@ -192,6 +193,30 @@ func (rr *reportRepository) ResolveReport(reportID uint, actorID uint, notes str
 			IsInternal: false,
 			ActorID:    &actorID,
 		}
+		if err := tx.Create(&history).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (rr *reportRepository) UpdatePriorityWithHistory(reportID uint, status entity.ReportStatus, newPriority entity.ReportPriority, actorID uint, notes string) error {
+	return rr.db.Transaction(func(tx *gorm.DB) error {
+		var report entity.Report
+
+		if err := tx.Model(&report).Update("priority", newPriority).Error; err != nil {
+			return err
+		}
+
+		history := entity.ReportHistory{
+			ReportID:   reportID,
+			Status:     status,
+			Notes:      notes,
+			IsInternal: true,
+			ActorID:    &actorID,
+		}
+
 		if err := tx.Create(&history).Error; err != nil {
 			return err
 		}
