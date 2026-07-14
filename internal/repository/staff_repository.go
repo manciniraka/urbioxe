@@ -15,6 +15,7 @@ type StaffRepository interface {
 	CreateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error
 	GetLastEmployeeSequence(departmentID uint, joinDate time.Time) (int, error)
 
+	FindStaffByUserID(userID uint) (*entity.StaffProfile, error)
 	GetAll() ([]entity.StaffProfile, error)
 	GetByID(id uint) (*entity.StaffProfile, error)
 	UpdateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error
@@ -79,6 +80,33 @@ func (sr *staffRepository) GetLastEmployeeSequence(departmentID uint, joinDate t
 	}
 
 	return lastSequence + 1, nil
+}
+
+func (sr *staffRepository) FindStaffByUserID(userID uint) (*entity.StaffProfile, error) {
+	var staff entity.StaffProfile
+
+	err := sr.db.
+		Preload("User").
+		Preload("Department").
+		Where(
+			"user_id = ?",
+			userID,
+		).
+		First(&staff).Error
+
+	if err != nil {
+
+		if errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
+			return nil, errs.ErrStaffNotFound
+		}
+
+		return nil, err
+	}
+
+	return &staff, nil
 }
 
 func (sr *staffRepository) GetAll() ([]entity.StaffProfile, error) {
