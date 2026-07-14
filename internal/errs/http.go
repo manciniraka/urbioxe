@@ -14,6 +14,7 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrPasswordMismatch),
 		errors.Is(err, ErrSamePassword),
 		errors.Is(err, ErrReportNotAssigned),
+		errors.Is(err, ErrCategoryAlreadyExists):
 		errors.Is(err, ErrHomeDistrictNotSet):
 		return http.StatusBadRequest
 
