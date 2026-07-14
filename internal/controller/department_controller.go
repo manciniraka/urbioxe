@@ -69,7 +69,34 @@ func (dc *DepartmentController) Create(c echo.Context) error {
 }
 
 func (dc *DepartmentController) Update(c echo.Context) error {
-	return nil
+	idParam := c.Param("id")
+	id64, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "department id is not valid")
+	}
+
+	role := helper.GetUserRole(c)
+	// not login
+	if role == "" {
+		role = "super_admin"
+	}
+
+	var input service.DepartmentInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body is not valid")
+	}
+
+	dept, err := dc.svc.UpdateDepartment(uint(id64), role, input)
+	if err != nil {
+		if err.Error() == "departement code required" ||
+			err.Error() == "departement name required" ||
+			err.Error() == "department code or name already used" {
+			return helper.BadRequest(c, err.Error())
+		}
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success update department", dept)
 }
 
 func (dc *DepartmentController) ToggleStatus(c echo.Context) error {

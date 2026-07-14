@@ -88,7 +88,43 @@ func (ds *departmentService) CreateDepartment(role string, input DepartmentInput
 }
 
 func (ds *departmentService) UpdateDepartment(id uint, role string, input DepartmentInput) (*entity.Department, error) {
-	return &entity.Department{}, nil
+	if role != "super_admin" {
+		return nil, errs.ErrForbidden
+	}
+
+	dept, err := ds.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.ErrDepartmentNotFound
+		}
+		return nil, err
+	}
+
+	if input.Code == "" {
+		return nil, errors.New("departement code required")
+	}
+	if input.Name == "" {
+		return nil, errors.New("departement name required")
+	}
+
+	exists, err := ds.repo.CheckCodeOrNameExists(input.Code, input.Name, id)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.New("department code or name already used")
+	}
+
+	dept.Code = input.Code
+	dept.Name = input.Name
+	dept.Description = input.Description
+
+	err = ds.repo.Update(dept)
+	if err != nil {
+		return nil, err
+	}
+
+	return dept, nil
 }
 
 func (ds *departmentService) ToggleDepartmentStatus(id uint, role string, input ToggleDepartmentStatusInput) error {
