@@ -98,3 +98,51 @@ func (sc *StaffController) GetStaffByID(c echo.Context) error {
 	)
 }
 
+func (sc *StaffController) UpdateStaff(c echo.Context) error {
+	id, err := strconv.Atoi(
+		c.Param("id"),
+	)
+	if err != nil {
+		return helper.BadRequest(
+			c,
+			"invalid staff id",
+		)
+	}
+
+	var input service.UpdateStaffInput
+
+	if err := c.Bind(
+		&input,
+	); err != nil {
+		return helper.BadRequest(
+			c,
+			"invalid request body",
+		)
+	}
+
+	if err := c.Validate(
+		&input,
+	); err != nil {
+		return helper.BadRequest(
+			c,
+			err.Error(),
+		)
+	}
+
+	staff, err := sc.staffService.UpdateStaff(
+		uint(id),
+		input,
+	)
+	if err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	return helper.Success(
+		c,
+		"staff updated successfully",
+		staff,
+	)
+}

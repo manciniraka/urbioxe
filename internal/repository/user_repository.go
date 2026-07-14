@@ -15,6 +15,7 @@ type UserRepository interface {
 	GetByID(id uint) (*entity.User, error)
 	UpdateProfile(user *entity.User) error
 	UpdatePassword(id uint, password string) error
+	UpdateUserTx(tx *gorm.DB, user *entity.User) error
 }
 
 type userRepository struct {
@@ -90,4 +91,14 @@ func (ur *userRepository) UpdatePassword(id uint, password string) error {
 		Where("id = ?", id).
 		Update("password", password).
 		Error
+}
+
+func (ur *userRepository) UpdateUserTx(tx *gorm.DB, user *entity.User) error {
+	return tx.
+		Model(&entity.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]any{
+			"phone_number": user.PhoneNumber,
+			"role":         user.Role,
+		}).Error
 }

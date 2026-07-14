@@ -17,7 +17,7 @@ type StaffRepository interface {
 
 	GetAll() ([]entity.StaffProfile, error)
 	GetByID(id uint) (*entity.StaffProfile, error)
-	Update(staff *entity.StaffProfile) error
+	UpdateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error
 }
 
 type staffRepository struct {
@@ -122,6 +122,13 @@ func (sr *staffRepository) GetByID(id uint) (*entity.StaffProfile, error) {
 	return &staff, nil
 }
 
-func (sr *staffRepository) Update(staff *entity.StaffProfile) error {
-	return sr.db.Save(staff).Error
+func (sr *staffRepository) UpdateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error{
+	return tx.
+		Model(&entity.StaffProfile{}).
+		Where("id = ?", staff.ID).
+		Updates(map[string]any{
+			"department_id": staff.DepartmentID,
+			"position":      staff.Position,
+			"is_active":     staff.IsActive,
+		}).Error
 }

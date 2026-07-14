@@ -72,4 +72,12 @@ func RegisterStaffRoutes(
 			entity.RoleDepartmentAdmin,
 		),
 	)
+	staff.PUT(
+		"/:id",
+		staffController.UpdateStaff,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles(
+			entity.RoleSuperAdmin,
+		),
+	)
 }

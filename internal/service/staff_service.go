@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/manciniraka/urbioxe/external/mailjet"
@@ -18,6 +19,7 @@ type StaffService interface {
 	CreateStaff(input CreateStaffInput) (*entity.StaffProfile, error)
 	GetAllStaff() ([]StaffSummary, error)
 	GetStaffByID(id uint) (*StaffDetail, error)
+	UpdateStaff(id uint, input UpdateStaffInput) (*entity.StaffProfile, error)
 }
 
 type staffService struct {
@@ -73,6 +75,13 @@ type StaffDetail struct {
 	DepartmentName string `json:"department_name"`
 	Position entity.StaffPosition `json:"position"`
 	JoinDate string `json:"join_date"`
+	IsActive bool `json:"is_active"`
+}
+
+type UpdateStaffInput struct {
+	DepartmentID uint `json:"department_id" validate:"required"`
+	Position entity.StaffPosition `json:"position" validate:"required"`
+	PhoneNumber string `json:"phone_number"`
 	IsActive bool `json:"is_active"`
 }
 
@@ -285,3 +294,92 @@ func (ss *staffService) GetStaffByID(id uint) (*StaffDetail, error) {
 return detail, nil
 }
 
+func (ss *staffService) UpdateStaff(id uint, input UpdateStaffInput) (*entity.StaffProfile, error){
+staff, err := ss.staffRepo.GetByID(
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var department entity.Department
+
+	err = ss.db.
+		First( // TODO(INTEGRATION): Replace direct query with DepartmentRepository after Department module has been merged.
+			&department,
+			input.DepartmentID,
+		).Error
+
+	if err != nil {
+
+		if errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
+			return nil, errs.ErrDepartmentNotFound
+		}
+
+		return nil, err
+	}
+
+	var userRole entity.UserRole
+
+	switch input.Position {
+
+	case entity.PositionFieldOfficer:
+		userRole = entity.RoleOfficer
+
+	case entity.PositionDepartmentAdmin:
+		userRole = entity.RoleDepartmentAdmin
+
+	case entity.PositionSupervisor:
+		userRole = entity.RoleSuperAdmin
+
+	default:
+		return nil, errs.ErrInvalidStaffPosition
+	}
+
+	err = ss.db.Transaction(
+		func(tx *gorm.DB) error {
+
+			staff.User.PhoneNumber = input.PhoneNumber
+			staff.User.Role = userRole
+
+			if err := ss.userRepo.UpdateUserTx(
+				tx,
+				staff.User,
+			); err != nil {
+				return err
+			}
+
+			staff.DepartmentID = input.DepartmentID
+			staff.Position = input.Position
+			staff.IsActive = input.IsActive
+
+			fmt.Printf("%+v\n", input)
+			fmt.Printf("%+v\n", staff.DepartmentID)
+
+			if err := ss.staffRepo.UpdateStaffTx(
+				tx,
+				staff,
+			); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	staff, err = ss.staffRepo.GetByID(
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return staff, nil
+}
