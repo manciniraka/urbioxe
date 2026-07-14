@@ -5,6 +5,7 @@ import (
 
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/repository"
+	"github.com/manciniraka/urbioxe/internal/validator"
 )
 
 type NewsService interface {
@@ -44,6 +45,10 @@ func (s *newsService) Create(
 	ctx context.Context,
 	news *entity.CreateNewsRequest,
 ) (*entity.RegionalNews, error) {
+	if err := validator.ValidateCreateNews(news); err != nil {
+		return nil, err
+	}
+
 	return s.newsRepository.Create(ctx, news)
 }
 
