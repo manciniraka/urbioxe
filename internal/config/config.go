@@ -29,8 +29,7 @@ type Config struct {
 	CloudinaryAPIKey    string
 	CloudinaryAPISecret string
 
-	OpenWeatherBaseURL string
-	OpenWeatherAPIKey  string
+	OpenWeatherAPIKey string
 }
 
 func Load() *Config {
@@ -60,7 +59,6 @@ func Load() *Config {
 		CloudinaryAPIKey:    os.Getenv("CLOUDINARY_API_KEY"),
 		CloudinaryAPISecret: os.Getenv("CLOUDINARY_API_SECRET"),
 
-		OpenWeatherBaseURL: os.Getenv("OPENWEATHER_BASE_URL"),
-		OpenWeatherAPIKey:  os.Getenv("OPENWEATHER_API_KEY"),
+		OpenWeatherAPIKey: os.Getenv("OPENWEATHER_API_KEY"),
 	}
 }
