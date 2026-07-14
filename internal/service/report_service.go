@@ -18,12 +18,12 @@ import (
 type ReportService interface {
 	CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*ReportResponse, error)
 	GetAllReports(param GetReportsParam) (*ReportListResponse, error)
-	GetReportByID(reportID int64, userID int64, role string) (*ReportResponse, error)
-	UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*ReportResponse, error)
-	AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error
-	StartReport(reportID int64, officerUserID int64, role string, notes string) error
-	ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error
-	RejectReport(reportID int64, adminUserID int64, role string, input UpdateStatusReportInput) error
+	GetReportByID(reportID uint, userID uint, role string) (*ReportResponse, error)
+	UpdateReport(reportID uint, userID uint, input UpdateReportInput) (*ReportResponse, error)
+	AssignReport(reportID uint, adminUserID uint, role string, input AssignReportInput) error
+	StartReport(reportID uint, officerUserID uint, role string, notes string) error
+	ResolveReport(reportID uint, officerUserID uint, role string, notes string, files []*multipart.FileHeader) error
+	RejectReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error
 }
 
 type reportService struct {
@@ -45,9 +45,9 @@ func NewReportService(
 }
 
 type GetReportsParam struct {
-	UserID     int64
+	UserID     uint
 	Role       string
-	DistrictID int64
+	DistrictID uint
 	Status     string
 	Page       int
 	Limit      int
@@ -60,7 +60,7 @@ type UserReportResponse struct {
 }
 
 type ReportResponse struct {
-	ID              int64                     `json:"id"`
+	ID              uint                      `json:"id"`
 	Title           string                    `json:"title"`
 	Description     string                    `json:"description"`
 	AddressLandmark string                    `json:"address_landmark"`
@@ -85,14 +85,14 @@ type UpdateReportInput struct {
 	Title              string   `json:"title"`
 	Description        string   `json:"description"`
 	AddressLandmark    string   `json:"address_landmark"`
-	CategoryID         int64    `json:"category_id"`
-	IncidentDistrictID int64    `json:"incident_district_id"`
+	CategoryID         uint     `json:"category_id"`
+	IncidentDistrictID uint     `json:"incident_district_id"`
 	Latitude           *float64 `json:"latitude"`
 	Longitude          *float64 `json:"longitude"`
 }
 
 type AssignReportInput struct {
-	StaffID int64  `json:"staff_id"`
+	StaffID uint   `json:"staff_id"`
 	Notes   string `json:"notes"`
 }
 
@@ -129,7 +129,7 @@ func ToReportResponse(r *entity.Report) *ReportResponse {
 // helper send email per status update
 func (rs *reportService) sendStatusEmailAsync(report *entity.Report, status string, notes string) {
 	if report != nil && report.User != nil && report.User.Email != "" {
-		go func(toEmail, toName, title string, id int64, currentStatus, currentNotes string) {
+		go func(toEmail, toName, title string, id uint, currentStatus, currentNotes string) {
 			err := rs.mailer.SendReportStatusEmail(
 				toEmail,
 				toName,
@@ -198,7 +198,7 @@ func (rs *reportService) CreateReport(reportInput entity.Report, files []*multip
 	}
 
 	if reportInput.User != nil && reportInput.User.Email != "" {
-		go func(toEmail, toName string, id int64, title, category, address, dateStr string) {
+		go func(toEmail, toName string, id uint, title, category, address, dateStr string) {
 			errMail := rs.mailer.SendReportCreatedEmail(
 				toEmail,
 				toName,
@@ -275,7 +275,7 @@ func (rs *reportService) GetAllReports(param GetReportsParam) (*ReportListRespon
 	}, nil
 }
 
-func (rs *reportService) GetReportByID(reportID int64, userID int64, role string) (*ReportResponse, error) {
+func (rs *reportService) GetReportByID(reportID uint, userID uint, role string) (*ReportResponse, error) {
 	report, err := rs.repo.FindByID(reportID, role)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -291,7 +291,7 @@ func (rs *reportService) GetReportByID(reportID int64, userID int64, role string
 	return ToReportResponse(report), nil
 }
 
-func (rs *reportService) UpdateReport(reportID int64, userID int64, input UpdateReportInput) (*ReportResponse, error) {
+func (rs *reportService) UpdateReport(reportID uint, userID uint, input UpdateReportInput) (*ReportResponse, error) {
 	existingReport, err := rs.repo.FindByID(reportID, "citizen")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -338,7 +338,7 @@ func (rs *reportService) UpdateReport(reportID int64, userID int64, input Update
 	return ToReportResponse(existingReport), nil
 }
 
-func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role string, input AssignReportInput) error {
+func (rs *reportService) AssignReport(reportID uint, adminUserID uint, role string, input AssignReportInput) error {
 	if role != "department_admin" && role != "super_admin" {
 		return errs.ErrReportAssignForbidden
 	}
@@ -382,7 +382,7 @@ func (rs *reportService) AssignReport(reportID int64, adminUserID int64, role st
 	return nil
 }
 
-func (rs *reportService) StartReport(reportID int64, officerUserID int64, role string, notes string) error {
+func (rs *reportService) StartReport(reportID uint, officerUserID uint, role string, notes string) error {
 	if role != "officer" && role != "super_admin" {
 		return errs.ErrReportUpdateForbidden
 	}
@@ -395,17 +395,20 @@ func (rs *reportService) StartReport(reportID int64, officerUserID int64, role s
 		return err
 	}
 
+	if role == "officer" {
+		if officerUserID != *report.AssignedStaffID {
+			return errs.ErrReportUpdateForbidden
+		}
+		if report.AssignedStaffID == nil {
+			return errs.ErrReportNotAssigned
+		}
+	}
+
 	if report.Status != entity.StatusAssigned {
 		if report.Status == entity.StatusInProgress {
 			return errs.ErrReportAlreadyInProcess
 		}
 		return errs.ErrReportNotAssigned
-	}
-
-	if role == "officer" {
-		if report.AssignedStaffID == nil {
-			return errs.ErrReportNotAssigned
-		}
 	}
 
 	if notes == "" {
@@ -428,7 +431,7 @@ func (rs *reportService) StartReport(reportID int64, officerUserID int64, role s
 	return nil
 }
 
-func (rs *reportService) ResolveReport(reportID int64, officerUserID int64, role string, notes string, files []*multipart.FileHeader) error {
+func (rs *reportService) ResolveReport(reportID uint, officerUserID uint, role string, notes string, files []*multipart.FileHeader) error {
 	if role != "officer" && role != "super_admin" {
 		return errs.ErrReportUpdateForbidden
 	}
@@ -475,7 +478,7 @@ func (rs *reportService) ResolveReport(reportID int64, officerUserID int64, role
 	return nil
 }
 
-func (rs *reportService) RejectReport(reportID int64, adminUserID int64, role string, input UpdateStatusReportInput) error {
+func (rs *reportService) RejectReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error {
 	if role != "department_admin" && role != "super_admin" {
 		return errs.ErrReportUpdateForbidden
 	}

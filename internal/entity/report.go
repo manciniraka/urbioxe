@@ -22,11 +22,11 @@ const (
 )
 
 type Report struct {
-	ID                 int64          `gorm:"primaryKey;autoIncrement"`
-	UserID             int64          `gorm:"not null"`
-	CategoryID         int64          `gorm:"not null"`
-	IncidentDistrictID int64          `gorm:"not null"`
-	AssignedStaffID    *int64         `gorm:"default:null"`
+	ID                 uint           `gorm:"primaryKey;autoIncrement"`
+	UserID             uint           `gorm:"not null"`
+	CategoryID         uint           `gorm:"not null"`
+	IncidentDistrictID uint           `gorm:"not null"`
+	AssignedStaffID    *uint          `gorm:"default:null"`
 	Title              string         `gorm:"type:varchar(255);not null"`
 	Description        string         `gorm:"type:text;not null"`
 	ReportNumber       *string        `gorm:"type:varchar(50);unique;default:null"`
@@ -46,12 +46,12 @@ type Report struct {
 }
 
 type Category struct {
-	ID           int64  `gorm:"primaryKey;autoIncrement"`
-	DepartmentID int64  `gorm:"not null"`
+	ID           uint   `gorm:"primaryKey;autoIncrement"`
+	DepartmentID uint   `gorm:"not null"`
 	Name         string `gorm:"type:varchar(100);not null"`
 }
 
 type District struct {
-	ID   int64  `gorm:"primaryKey;autoIncrement"`
+	ID   uint   `gorm:"primaryKey;autoIncrement"`
 	Name string `gorm:"type:varchar(100);not null"`
 }

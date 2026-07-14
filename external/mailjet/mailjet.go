@@ -285,7 +285,7 @@ Regards,<br>
 func (c *Client) SendReportCreatedEmail(
 	toEmail string,
 	toName string,
-	reportID int64,
+	reportID uint,
 	reportTitle string,
 	categoryName string,
 	addressLandmark string,
@@ -345,7 +345,7 @@ func (c *Client) SendReportCreatedEmail(
 	return c.SendEmail(toEmail, toName, subject, textBody, htmlBody)
 }
 
-func (c *Client) SendReportStatusEmail(toEmail, toName, reportTitle string, reportID int64, status, notes string) error {
+func (c *Client) SendReportStatusEmail(toEmail, toName, reportTitle string, reportID uint, status, notes string) error {
 	subject := fmt.Sprintf("Update Status Laporan #%d: %s", reportID, reportTitle)
 
 	textBody := fmt.Sprintf(

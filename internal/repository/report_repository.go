@@ -8,11 +8,11 @@ import (
 type ReportRepository interface {
 	Create(report *entity.Report) error
 	FindAll(filter ReportFilter) ([]entity.Report, int64, error)
-	UpdateStatusWithHistory(reportID int64, newStatus entity.ReportStatus, actorID int64, notes string, isInternal bool) error
-	FindByID(id int64, role string) (*entity.Report, error)
+	UpdateStatusWithHistory(reportID uint, newStatus entity.ReportStatus, actorID uint, notes string, isInternal bool) error
+	FindByID(id uint, role string) (*entity.Report, error)
 	Update(report *entity.Report) error
-	AssignStaff(reportID int64, staffID int64, actorID int64, notes string) error
-	ResolveReport(reportID int64, actorID int64, notes string, attachments []entity.ReportAttachment) error
+	AssignStaff(reportID uint, staffID uint, actorID uint, notes string) error
+	ResolveReport(reportID uint, actorID uint, notes string, attachments []entity.ReportAttachment) error
 }
 
 type reportRepository struct {
@@ -26,9 +26,9 @@ func NewReportRepository(db *gorm.DB) ReportRepository {
 }
 
 type ReportFilter struct {
-	UserID     int64
+	UserID     uint
 	Role       string
-	DistrictID int64
+	DistrictID uint
 	Status     string
 	Limit      int
 	Offset     int
@@ -45,7 +45,7 @@ func (rr *reportRepository) Create(report *entity.Report) error {
 		First(report, report.ID).Error
 }
 
-func (rr *reportRepository) UpdateStatusWithHistory(reportID int64, newStatus entity.ReportStatus, actorID int64, notes string, isInternal bool) error {
+func (rr *reportRepository) UpdateStatusWithHistory(reportID uint, newStatus entity.ReportStatus, actorID uint, notes string, isInternal bool) error {
 	return rr.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&entity.Report{}).Where("id = ?", reportID).Update("status", newStatus).Error; err != nil {
 			return err
@@ -114,7 +114,7 @@ func (rr *reportRepository) FindAll(filter ReportFilter) ([]entity.Report, int64
 	return reports, totalData, nil
 }
 
-func (rr *reportRepository) FindByID(id int64, role string) (*entity.Report, error) {
+func (rr *reportRepository) FindByID(id uint, role string) (*entity.Report, error) {
 	var report entity.Report
 
 	query := rr.db.Model(&entity.Report{}).
@@ -145,7 +145,7 @@ func (rr *reportRepository) Update(report *entity.Report) error {
 	return rr.db.Save(report).Error
 }
 
-func (rr *reportRepository) AssignStaff(reportID int64, staffID int64, actorID int64, notes string) error {
+func (rr *reportRepository) AssignStaff(reportID uint, staffID uint, actorID uint, notes string) error {
 	return rr.db.Transaction(func(tx *gorm.DB) error {
 		updates := map[string]interface{}{
 			"assigned_staff_id": staffID,
@@ -170,7 +170,7 @@ func (rr *reportRepository) AssignStaff(reportID int64, staffID int64, actorID i
 	})
 }
 
-func (rr *reportRepository) ResolveReport(reportID int64, actorID int64, notes string, attachments []entity.ReportAttachment) error {
+func (rr *reportRepository) ResolveReport(reportID uint, actorID uint, notes string, attachments []entity.ReportAttachment) error {
 	return rr.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&entity.Report{}).Where("id = ?", reportID).Update("status", entity.StatusResolved).Error; err != nil {
 			return err
