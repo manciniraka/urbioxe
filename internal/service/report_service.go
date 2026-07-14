@@ -570,7 +570,7 @@ func (rs *reportService) RejectReport(reportID uint, adminUserID uint, role stri
 }
 
 func (rs *reportService) VerifyReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error {
-	if role != "admin" && role != "super_admin" {
+	if role != "department_admin" && role != "super_admin" {
 		return errs.ErrReportUpdateForbidden
 	}
 
@@ -602,7 +602,7 @@ func (rs *reportService) VerifyReport(reportID uint, adminUserID uint, role stri
 }
 
 func (rs *reportService) UpdatePriority(reportID uint, adminUserID uint, role string, input UpdatePriorityInput) error {
-	if role != "admin" && role != "super_admin" {
+	if role != "department_admin" && role != "super_admin" {
 		return errs.ErrForbidden
 	}
 
@@ -619,19 +619,48 @@ func (rs *reportService) UpdatePriority(reportID uint, adminUserID uint, role st
 	}
 
 	oldPriority := report.Priority
-	report.Priority = input.Priority
-
-	err = rs.repo.Update(report)
-	if err != nil {
-		return err
-	}
 
 	notes := fmt.Sprintf("Priority updated from '%s' to '%s'. Notes: %s", oldPriority, input.Priority, input.Notes)
-	rs.repo.UpdatePriorityWithHistory(reportID, report.Status, report.Priority, adminUserID, notes)
+	rs.repo.UpdatePriorityWithHistory(reportID, report.Status, input.Priority, adminUserID, notes)
 
 	return nil
 }
 
 func (rs *reportService) ReassignReport(reportID uint, adminUserID uint, role string, input ReassignReportInput) error {
+	if role != "department_admin" && role != "super_admin" {
+		return errs.ErrForbidden
+	}
+
+	if input.NewStaffID == 0 {
+		return errors.New("staff id required")
+	}
+
+	report, err := rs.repo.FindByID(reportID, role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrReportNotFound
+		}
+		return err
+	}
+
+	if report.AssignedStaffID == nil {
+		return errs.ErrReportNotAssigned
+	}
+
+	oldStaffID := *report.AssignedStaffID
+	if oldStaffID == input.NewStaffID {
+		return errors.New("report already assigned to this staff")
+	}
+
+	notes := fmt.Sprintf("Report handling is transfered from Staff ID #%d to Staff ID #%d. Notes: %s", oldStaffID, input.NewStaffID, input.Notes)
+
+	err = rs.repo.AssignStaff(reportID, input.NewStaffID, adminUserID, notes)
+	if err != nil {
+		return err
+	}
+
+	updatedReport, _ := rs.repo.FindByID(reportID, role)
+	rs.sendStatusEmailAsync(updatedReport, string(entity.StatusAssigned), notes)
+
 	return nil
 }

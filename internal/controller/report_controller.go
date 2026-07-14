@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
@@ -282,4 +283,30 @@ func (rc *ReportController) UpdatePriority(c echo.Context) error {
 	}
 
 	return helper.Success(c, "success update priority", nil)
+}
+
+func (rc *ReportController) Reassign(c echo.Context) error {
+	idParam := c.Param("id")
+	id64, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "report id is not valid")
+	}
+
+	userID := helper.GetUserID(c)
+	role := helper.GetUserRole(c)
+
+	var input service.ReassignReportInput
+	if err := c.Bind(&input); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"status": "error", "message": "Format request tidak valid"})
+	}
+
+	err = rc.svc.ReassignReport(uint(id64), userID, role, input)
+	if err != nil {
+		if err.Error() == "staff id required" || err.Error() == "report already assigned to this staff" {
+			return helper.BadRequest(c, err.Error())
+		}
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success reassign report to another staff", nil)
 }

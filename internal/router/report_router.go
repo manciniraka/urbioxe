@@ -49,6 +49,7 @@ func RegisterReportRoutes(
 	report.GET("", reportCtrl.GetAll, middleware.RequireRoles("citizen", "officer", "department_admin", "super_admin"))
 	report.GET("/:id", reportCtrl.GetByID, middleware.RequireRoles("citizen", "officer", "department_admin", "super_admin"))
 	report.PATCH("/:id/assign", reportCtrl.Assign, middleware.RequireRoles("department_admin", "super_admin"))
+	report.PATCH("/:id/reassign", reportCtrl.Reassign, middleware.RequireRoles("department_admin", "super_admin"))
 	report.PATCH("/:id/start", reportCtrl.Start, middleware.RequireRoles("officer"))
 	report.PATCH("/:id/resolve", reportCtrl.Resolve, middleware.RequireRoles("officer"))
 	report.PATCH("/:id/reject", reportCtrl.Reject, middleware.RequireRoles("department_admin", "super_admin"))
