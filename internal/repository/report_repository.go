@@ -205,7 +205,7 @@ func (rr *reportRepository) UpdatePriorityWithHistory(reportID uint, status enti
 	return rr.db.Transaction(func(tx *gorm.DB) error {
 		var report entity.Report
 
-		if err := tx.Model(&report).Update("priority", newPriority).Error; err != nil {
+		if err := tx.Model(&report).Where("id = ?", reportID).Update("priority", newPriority).Error; err != nil {
 			return err
 		}
 
