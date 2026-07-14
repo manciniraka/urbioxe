@@ -174,7 +174,7 @@ CREATE TABLE emergency_contacts (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE weather_caches (
+CREATE TABLE weather_cache (
     id BIGSERIAL PRIMARY KEY,
     district_id BIGSERIAL UNIQUE REFERENCES districts(id),
     temperature NUMERIC(5,2),
