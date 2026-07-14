@@ -15,6 +15,7 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrSamePassword),
 		errors.Is(err, ErrReportNotAssigned),
 		errors.Is(err, ErrCategoryAlreadyExists):
+		errors.Is(err, ErrHomeDistrictNotSet):
 		return http.StatusBadRequest
 
 	// 401 Unauthorized
@@ -36,7 +37,8 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrReportNotFound),
 		errors.Is(err, ErrNewsNotFound),
 		errors.Is(err, ErrEmergencyContactNotFound),
-		errors.Is(err, ErrWeatherNotFound):
+		errors.Is(err, ErrWeatherNotFound),
+		errors.Is(err, ErrDistrictCoordinateNotFound):
 		return http.StatusNotFound
 
 	// 409 Conflict
