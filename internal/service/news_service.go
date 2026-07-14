@@ -11,32 +11,32 @@ import (
 )
 
 type CreateNewsInput struct {
-	DepartmentID *int64  				`json:"department_id"`
-	DistrictID   *int64 				`json:"district_id,omitempty"`
-	Title        string 				`json:"title"`
-	Content      string 				`json:"content"`
-	Category     entity.NewsCategory 	`json:"category"`
-	BannerURL    *string 				`json:"banner_url"`
-	TargetScope  entity.NewsScope 		`json:"target_scope"`
-	IsPinned     bool   				`json:"is_pinned"`
+	DepartmentID *int64              `json:"department_id"`
+	DistrictID   *int64              `json:"district_id,omitempty"`
+	Title        string              `json:"title"`
+	Content      string              `json:"content"`
+	Category     entity.NewsCategory `json:"category"`
+	BannerURL    *string             `json:"banner_url"`
+	TargetScope  entity.NewsScope    `json:"target_scope"`
+	IsPinned     bool                `json:"is_pinned"`
 }
 
 type UpdateNewsInput struct {
-	DepartmentID *int64  				`json:"department_id"`
-	DistrictID   *int64 				`json:"district_id,omitempty"`
-	Title        string 				`json:"title"`
-	Content      string 				`json:"content"`
-	Category     entity.NewsCategory 	`json:"category"`
-	BannerURL    *string 				`json:"banner_url"`
-	TargetScope  entity.NewsScope 		`json:"target_scope"`
-	IsPinned     bool   				`json:"is_pinned"`
+	DepartmentID *int64              `json:"department_id"`
+	DistrictID   *int64              `json:"district_id,omitempty"`
+	Title        string              `json:"title"`
+	Content      string              `json:"content"`
+	Category     entity.NewsCategory `json:"category"`
+	BannerURL    *string             `json:"banner_url"`
+	TargetScope  entity.NewsScope    `json:"target_scope"`
+	IsPinned     bool                `json:"is_pinned"`
 }
 
 type NewsService interface {
 	GetAll() ([]entity.RegionalNews, error)
 	GetByID(id int64) (*entity.RegionalNews, error)
 	Create(createdBy int64, input CreateNewsInput) (*entity.RegionalNews, error)
-	Update(id int64, news *entity.UpdateNewsRequest) (*entity.RegionalNews, error)
+	Update(id int64, input UpdateNewsInput) (*entity.RegionalNews, error)
 	Delete(id int64) error
 }
 
@@ -102,17 +102,33 @@ func (s *newsService) Create(
 
 func (s *newsService) Update(
 	id int64,
-	news *entity.UpdateNewsRequest,
+	input UpdateNewsInput,
 ) (*entity.RegionalNews, error) {
+	news := &entity.UpdateNewsRequest{
+		DepartmentID: input.DepartmentID,
+		DistrictID:   input.DistrictID,
+		Title:        input.Title,
+		Content:      input.Content,
+		Category:     input.Category,
+		BannerURL:    input.BannerURL,
+		TargetScope:  input.TargetScope,
+		IsPinned:     input.IsPinned,
+	}
+
 	ctx := context.Background()
-	return s.newsRepository.Update(ctx, id, news)
+
+	return s.newsRepository.Update(
+		ctx,
+		id,
+		news,
+	)
 }
 
 func (s *newsService) Delete(
 	id int64,
 ) error {
 	ctx := context.Background()
-	
+
 	err := s.newsRepository.Delete(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
