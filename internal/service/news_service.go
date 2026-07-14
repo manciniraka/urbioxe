@@ -1,10 +1,6 @@
 package service
 
 import (
-	"context"
-	"database/sql"
-	"errors"
-
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/repository"
 	"github.com/manciniraka/urbioxe/internal/validator"
@@ -35,8 +31,14 @@ type UpdateNewsInput struct {
 type NewsService interface {
 	GetAll() ([]entity.RegionalNews, error)
 	GetByID(id int64) (*entity.RegionalNews, error)
-	Create(createdBy int64, input CreateNewsInput) (*entity.RegionalNews, error)
-	Update(id int64, input UpdateNewsInput) (*entity.RegionalNews, error)
+	Create(
+		createdBy int64,
+		input CreateNewsInput,
+	) (*entity.RegionalNews, error)
+	Update(
+		id int64,
+		input UpdateNewsInput,
+	) (*entity.RegionalNews, error)
 	Delete(id int64) error
 }
 
@@ -53,30 +55,20 @@ func NewNewsService(
 }
 
 func (s *newsService) GetAll() ([]entity.RegionalNews, error) {
-	ctx := context.Background()
-
-	return s.newsRepository.GetAll(ctx)
+	return s.newsRepository.GetAll()
 }
 
 func (s *newsService) GetByID(
 	id int64,
 ) (*entity.RegionalNews, error) {
-	ctx := context.Background()
-	news, err := s.newsRepository.GetByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, sql.ErrNoRows
-		}
-		return nil, err
-	}
-	return news, nil
+	return s.newsRepository.GetByID(id)
 }
 
 func (s *newsService) Create(
 	createdBy int64,
 	input CreateNewsInput,
 ) (*entity.RegionalNews, error) {
-	news := &entity.CreateNewsRequest{
+	news := &entity.RegionalNews{
 		DepartmentID: input.DepartmentID,
 		DistrictID:   input.DistrictID,
 		Title:        input.Title,
@@ -85,56 +77,56 @@ func (s *newsService) Create(
 		BannerURL:    input.BannerURL,
 		TargetScope:  input.TargetScope,
 		IsPinned:     input.IsPinned,
+		CreatedBy:    &createdBy,
 	}
 
-	if err := validator.ValidateCreateNews(news); err != nil {
+	if err := validator.ValidateCreateNews(&entity.CreateNewsRequest{
+		DepartmentID: input.DepartmentID,
+		DistrictID:   input.DistrictID,
+		Title:        input.Title,
+		Content:      input.Content,
+		Category:     input.Category,
+		BannerURL:    input.BannerURL,
+		TargetScope:  input.TargetScope,
+		IsPinned:     input.IsPinned,
+	}); err != nil {
 		return nil, err
 	}
 
-	ctx := context.Background()
+	if err := s.newsRepository.Create(news); err != nil {
+		return nil, err
+	}
 
-	return s.newsRepository.Create(
-		ctx,
-		createdBy,
-		news,
-	)
+	return news, nil
 }
 
 func (s *newsService) Update(
 	id int64,
 	input UpdateNewsInput,
 ) (*entity.RegionalNews, error) {
-	news := &entity.UpdateNewsRequest{
-		DepartmentID: input.DepartmentID,
-		DistrictID:   input.DistrictID,
-		Title:        input.Title,
-		Content:      input.Content,
-		Category:     input.Category,
-		BannerURL:    input.BannerURL,
-		TargetScope:  input.TargetScope,
-		IsPinned:     input.IsPinned,
+	news, err := s.newsRepository.GetByID(id)
+	if err != nil {
+		return nil, err
 	}
 
-	ctx := context.Background()
+	news.DepartmentID = input.DepartmentID
+	news.DistrictID = input.DistrictID
+	news.Title = input.Title
+	news.Content = input.Content
+	news.Category = input.Category
+	news.BannerURL = input.BannerURL
+	news.TargetScope = input.TargetScope
+	news.IsPinned = input.IsPinned
 
-	return s.newsRepository.Update(
-		ctx,
-		id,
-		news,
-	)
+	if err := s.newsRepository.Update(news); err != nil {
+		return nil, err
+	}
+
+	return news, nil
 }
 
 func (s *newsService) Delete(
 	id int64,
 ) error {
-	ctx := context.Background()
-
-	err := s.newsRepository.Delete(ctx, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return sql.ErrNoRows
-		}
-		return err
-	}
-	return nil
+	return s.newsRepository.Delete(id)
 }
