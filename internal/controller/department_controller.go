@@ -45,10 +45,6 @@ func (dc *DepartmentController) GetByID(c echo.Context) error {
 
 func (dc *DepartmentController) Create(c echo.Context) error {
 	role := helper.GetUserRole(c)
-	// test
-	if role == "" {
-		role = "super_admin"
-	}
 
 	var input service.DepartmentInput
 	if err := c.Bind(&input); err != nil {
@@ -76,10 +72,6 @@ func (dc *DepartmentController) Update(c echo.Context) error {
 	}
 
 	role := helper.GetUserRole(c)
-	// not login
-	if role == "" {
-		role = "super_admin"
-	}
 
 	var input service.DepartmentInput
 	if err := c.Bind(&input); err != nil {
@@ -107,10 +99,6 @@ func (dc *DepartmentController) ToggleStatus(c echo.Context) error {
 	}
 
 	role := helper.GetUserRole(c)
-	// test
-	if role == "" {
-		role = "super_admin"
-	}
 
 	var input service.ToggleDepartmentStatusInput
 	if err := c.Bind(&input); err != nil {
