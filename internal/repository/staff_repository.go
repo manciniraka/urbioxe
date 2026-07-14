@@ -7,12 +7,17 @@ import (
 	"time"
 
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"gorm.io/gorm"
 )
 
 type StaffRepository interface {
 	CreateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error
 	GetLastEmployeeSequence(departmentID uint, joinDate time.Time) (int, error)
+
+	GetAll() ([]entity.StaffProfile, error)
+	GetByID(id uint) (*entity.StaffProfile, error)
+	Update(staff *entity.StaffProfile) error
 }
 
 type staffRepository struct {
@@ -74,4 +79,49 @@ func (sr *staffRepository) GetLastEmployeeSequence(departmentID uint, joinDate t
 	}
 
 	return lastSequence + 1, nil
+}
+
+func (sr *staffRepository) GetAll() ([]entity.StaffProfile, error) {
+	var staffs []entity.StaffProfile
+
+	err := sr.db.
+		Preload("User").
+		Preload("Department").
+		Order("employee_number ASC").
+		Find(&staffs).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return staffs, nil
+}
+
+func (sr *staffRepository) GetByID(id uint) (*entity.StaffProfile, error) {
+	var staff entity.StaffProfile
+
+	err := sr.db.
+		Preload("User").
+		Preload("Department").
+		First(
+			&staff,
+			id,
+		).Error
+
+	if err != nil {
+		if errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
+			return nil, errs.ErrStaffNotFound
+		}
+
+		return nil, err
+	}
+
+	return &staff, nil
+}
+
+func (sr *staffRepository) Update(staff *entity.StaffProfile) error {
+	return sr.db.Save(staff).Error
 }

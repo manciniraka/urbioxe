@@ -16,6 +16,8 @@ import (
 
 type StaffService interface {
 	CreateStaff(input CreateStaffInput) (*entity.StaffProfile, error)
+	GetAllStaff() ([]StaffSummary, error)
+	GetStaffByID(id uint) (*StaffDetail, error)
 }
 
 type staffService struct {
@@ -47,6 +49,31 @@ type CreateStaffInput struct {
 	DepartmentID uint            `json:"department_id" validate:"required"`
 	Position     entity.StaffPosition `json:"position" validate:"required"`
 	JoinDate string `json:"join_date" validate:"required"`
+}
+
+type StaffSummary struct {
+	ID             uint                 `json:"id"`
+	EmployeeNumber string               `json:"employee_number"`
+	Name string `json:"name"`
+	DepartmentID uint `json:"department_id"`
+	DepartmentName string `json:"department_name"`
+	Position entity.StaffPosition `json:"position"`
+	IsActive bool `json:"is_active"`
+}
+
+type StaffDetail struct {
+	ID uint `json:"id"`
+	UserID uint `json:"user_id"`
+	DepartmentID uint `json:"department_id"`
+	EmployeeNumber string `json:"employee_number"`
+	NIK string `json:"nik"`
+	Name string `json:"name"`
+	Email string `json:"email"`
+	PhoneNumber string `json:"phone_number"`
+	DepartmentName string `json:"department_name"`
+	Position entity.StaffPosition `json:"position"`
+	JoinDate string `json:"join_date"`
+	IsActive bool `json:"is_active"`
 }
 
 func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfile, error) {
@@ -202,3 +229,59 @@ func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfil
 
 	return &staff, nil
 }
+
+func (ss *staffService) GetAllStaff() ([]StaffSummary, error) {
+	staffs, err := ss.staffRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	summaries := make(
+		[]StaffSummary,
+		0,
+		len(staffs),
+	)
+
+	for _, staff := range staffs {
+
+		summaries = append(
+			summaries,
+			StaffSummary{
+				ID:             staff.ID,
+				EmployeeNumber: staff.EmployeeNumber,
+				Name:           staff.User.Name,
+				DepartmentID:   staff.DepartmentID,
+				DepartmentName: staff.Department.Name,
+				Position:       staff.Position,
+				IsActive:       staff.IsActive,
+			},
+		)
+	}
+
+	return summaries, nil
+}
+
+func (ss *staffService) GetStaffByID(id uint) (*StaffDetail, error) {
+	staff, err := ss.staffRepo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	detail := &StaffDetail{
+	ID: staff.ID,
+	UserID: staff.UserID,
+	DepartmentID: staff.DepartmentID,
+	EmployeeNumber: staff.EmployeeNumber,
+	NIK: staff.User.NIK,
+	Name: staff.User.Name,
+	Email: staff.User.Email,
+	PhoneNumber: staff.User.PhoneNumber,
+	DepartmentName: staff.Department.Name,
+	Position: staff.Position,
+	JoinDate: staff.JoinDate,
+	IsActive: staff.IsActive,
+}
+
+return detail, nil
+}
+

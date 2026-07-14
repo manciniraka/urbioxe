@@ -52,4 +52,24 @@ func RegisterStaffRoutes(
 		middleware.AuthMiddleware(cfg),
 		middleware.RequireRoles(entity.RoleSuperAdmin),
 	)
+
+	staff.GET(
+		"",
+		staffController.GetAllStaff,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles(
+			entity.RoleSuperAdmin,
+			entity.RoleDepartmentAdmin,
+		),
+	)
+
+	staff.GET(
+		"/:id",
+		staffController.GetStaffByID,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles(
+			entity.RoleSuperAdmin,
+			entity.RoleDepartmentAdmin,
+		),
+	)
 }
