@@ -23,7 +23,7 @@ func RegisterDepartmentRoutes(
 	department.GET("/:id", departmentController.GetByID)
 	department.POST("", departmentController.Create)
 	department.PUT("/:id", departmentController.Update)
-	department.PATCH("/:id", departmentController.ToggleStatus)
+	department.PATCH("/:id/status", departmentController.ToggleStatus)
 
 	_ = department
 	_ = db

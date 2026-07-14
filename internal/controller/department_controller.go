@@ -100,5 +100,27 @@ func (dc *DepartmentController) Update(c echo.Context) error {
 }
 
 func (dc *DepartmentController) ToggleStatus(c echo.Context) error {
-	return nil
+	idParam := c.Param("id")
+	id64, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return helper.BadRequest(c, "department id is not valid")
+	}
+
+	role := helper.GetUserRole(c)
+	// test
+	if role == "" {
+		role = "super_admin"
+	}
+
+	var input service.ToggleDepartmentStatusInput
+	if err := c.Bind(&input); err != nil {
+		return helper.BadRequest(c, "format body is not valid")
+	}
+
+	err = dc.svc.ToggleDepartmentStatus(uint(id64), role, input)
+	if err != nil {
+		return helper.HandleError(c, err)
+	}
+
+	return helper.Success(c, "success update department status", nil)
 }

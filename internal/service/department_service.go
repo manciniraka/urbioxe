@@ -128,5 +128,17 @@ func (ds *departmentService) UpdateDepartment(id uint, role string, input Depart
 }
 
 func (ds *departmentService) ToggleDepartmentStatus(id uint, role string, input ToggleDepartmentStatusInput) error {
-	return nil
+	if role != "super_admin" {
+		return errs.ErrForbidden
+	}
+
+	_, err := ds.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errs.ErrDepartmentNotFound
+		}
+		return err
+	}
+
+	return ds.repo.UpdateStatus(id, input.IsActive)
 }
