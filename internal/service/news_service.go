@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/repository"
 	"github.com/manciniraka/urbioxe/internal/validator"
 )
@@ -106,7 +107,7 @@ func (s *newsService) Update(
 ) (*entity.RegionalNews, error) {
 	news, err := s.newsRepository.GetByID(id)
 	if err != nil {
-		return nil, err
+		return nil, errs.ErrNewsNotFound
 	}
 
 	news.DepartmentID = input.DepartmentID
@@ -128,5 +129,9 @@ func (s *newsService) Update(
 func (s *newsService) Delete(
 	id int64,
 ) error {
+	_, err := s.newsRepository.GetByID(id)
+	if err != nil {
+		return errs.ErrNewsNotFound
+	}
 	return s.newsRepository.Delete(id)
 }
