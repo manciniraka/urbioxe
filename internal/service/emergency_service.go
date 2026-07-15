@@ -29,20 +29,20 @@ func NewEmergencyService(
 }
 
 type CreateEmergencyInput struct {
-	DepartmentID uint    `json:"department_id" validate:"required"`
+	DepartmentID *uint   `json:"department_id"`
 	DistrictID   *uint   `json:"district_id"`
 	Name         string  `json:"name" validate:"required,min=3,max=100"`
-	PhoneNumber  string  `json:"phone_number" validate:"required,min=9,max=15"`
+	PhoneNumber  string  `json:"phone_number" validate:"required,min=3,max=15"`
 	Description  *string `json:"description"`
 	IconURL      *string `json:"icon_url"`
 	IsActive     bool    `json:"is_active"`
 }
 
 type UpdateEmergencyInput struct {
-	DepartmentID uint    `json:"department_id" validate:"required"`
+	DepartmentID *uint   `json:"department_id"`
 	DistrictID   *uint   `json:"district_id"`
 	Name         string  `json:"name" validate:"required,min=3,max=100"`
-	PhoneNumber  string  `json:"phone_number" validate:"required,min=9,max=15"`
+	PhoneNumber  string  `json:"phone_number" validate:"required,min=3,max=15"`
 	Description  *string `json:"description"`
 	IconURL      *string `json:"icon_url"`
 	IsActive     bool    `json:"is_active"`

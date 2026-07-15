@@ -28,7 +28,7 @@ func InitRouter(
 	RegisterUserRoutes(e, db, cfg)
 
 	// Master Data
-	RegisterDistrictRoutes(e, db,cfg)
+	RegisterDistrictRoutes(e, db, cfg)
 	RegisterDepartmentRoutes(e, db, cfg)
 	RegisterCategoryRoutes(e, db, cfg)
 
@@ -40,7 +40,7 @@ func InitRouter(
 
 	// Public Information
 	RegisterRegionalNewsRoutes(e, db)
-	RegisterEmergencyContactRoutes(e, db)
+	RegisterEmergencyContactRoutes(e, db, cfg)
 
 	// Weather
 	RegisterWeatherRoutes(e, db)
