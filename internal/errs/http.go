@@ -14,6 +14,8 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrPasswordMismatch),
 		errors.Is(err, ErrSamePassword),
 		errors.Is(err, ErrReportNotAssigned),
+		errors.Is(err, ErrCategoryAlreadyExists),
+		errors.Is(err, ErrHomeDistrictNotSet),
 		errors.Is(err, ErrInvalidStaffPosition),
 		errors.Is(err, ErrReportShouldInProcess),
 		errors.Is(err, ErrReportShouldPending),
@@ -44,7 +46,9 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrReportNotFound),
 		errors.Is(err, ErrNewsNotFound),
 		errors.Is(err, ErrEmergencyContactNotFound),
-		errors.Is(err, ErrWeatherNotFound):
+		errors.Is(err, ErrWeatherNotFound),
+		errors.Is(err, ErrWeatherForecastNotFound),
+		errors.Is(err, ErrDistrictCoordinateNotFound):
 		return http.StatusNotFound
 
 	// 409 Conflict

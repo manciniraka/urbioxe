@@ -36,6 +36,7 @@ func (dr *districtRepository) GetAll() ([]entity.District, error) {
 	var districts []entity.District
 
 	err := dr.db.
+		Where("is_active = ?", true).
 		Order("name ASC").
 		Find(&districts).Error
 
