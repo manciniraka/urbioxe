@@ -8,4 +8,5 @@ var (
 	ErrStaffNotFound      = errors.New("staff not found")
 	ErrStaffInactive      = errors.New("staff is inactive")
 	ErrStaffAlreadyExists = errors.New("staff already exists")
+	ErrInvalidStaffPosition = errors.New("invalid staff position")
 )

@@ -14,6 +14,7 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrPasswordMismatch),
 		errors.Is(err, ErrSamePassword),
 		errors.Is(err, ErrReportNotAssigned),
+		errors.Is(err, ErrInvalidStaffPosition),
 		errors.Is(err, ErrReportShouldInProcess),
 		errors.Is(err, ErrReportShouldPending),
 		errors.Is(err, ErrReportAlreadyResolved),
