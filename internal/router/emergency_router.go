@@ -2,7 +2,9 @@ package router
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/controller"
+	"github.com/manciniraka/urbioxe/internal/middleware"
 	"github.com/manciniraka/urbioxe/internal/repository"
 	"github.com/manciniraka/urbioxe/internal/service"
 	"gorm.io/gorm"
@@ -11,6 +13,7 @@ import (
 func RegisterEmergencyContactRoutes(
 	e *echo.Echo,
 	db *gorm.DB,
+	cfg *config.Config,
 ) {
 
 	// TODO:
@@ -27,8 +30,12 @@ func RegisterEmergencyContactRoutes(
 	emergency.GET("/:id", emergencyController.GetByID)
 
 	// Department Admin / Super Admin
-	emergency.POST("", emergencyController.Create)
-	emergency.PUT("/:id", emergencyController.Update)
+	emergency.POST("", emergencyController.Create,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles("department_admin", "super_admin"))
+	emergency.PUT("/:id", emergencyController.Update,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles("department_admin", "super_admin"))
 
 	_ = emergency
 	_ = db
