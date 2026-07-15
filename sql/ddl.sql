@@ -46,6 +46,7 @@ CREATE TYPE news_scope AS ENUM (
 
 CREATE TABLE districts (
     id BIGSERIAL PRIMARY KEY,
+    bmkg_adm4_code VARCHAR(20) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
 
