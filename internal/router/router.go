@@ -36,7 +36,7 @@ func InitRouter(
 	RegisterStaffRoutes(e, db)
 
 	// Reports
-	RegisterReportRoutes(e, db)
+	RegisterReportRoutes(e, db, cfg)
 
 	// Public Information
 	RegisterRegionalNewsRoutes(e, db)
