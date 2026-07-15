@@ -39,7 +39,7 @@ func InitRouter(
 	RegisterReportRoutes(e, db, cfg)
 
 	// Public Information
-	RegisterRegionalNewsRoutes(e, db)
+	RegisterRegionalNewsRoutes(e, db, cfg)
 	RegisterEmergencyContactRoutes(e, db, cfg)
 
 	// Weather
