@@ -24,14 +24,18 @@ func RegisterEmergencyContactRoutes(
 	// controller
 	emergencyController := controller.NewEmergencyController(emergencyService)
 
-	emergency := e.Group("/emergency-contacts", middleware.AuthMiddleware(cfg))
+	emergency := e.Group("/emergency-contacts")
 	// Public
-	emergency.GET("", emergencyController.GetAll, middleware.RequireRoles("citizen", "officer", "department_admin", "super_admin"))
-	emergency.GET("/:id", emergencyController.GetByID, middleware.RequireRoles("citizen", "officer", "department_admin", "super_admin"))
+	emergency.GET("", emergencyController.GetAll)
+	emergency.GET("/:id", emergencyController.GetByID)
 
 	// Department Admin / Super Admin
-	emergency.POST("", emergencyController.Create, middleware.RequireRoles("department_admin", "super_admin"))
-	emergency.PUT("/:id", emergencyController.Update, middleware.RequireRoles("department_admin", "super_admin"))
+	emergency.POST("", emergencyController.Create,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles("department_admin", "super_admin"))
+	emergency.PUT("/:id", emergencyController.Update,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles("department_admin", "super_admin"))
 
 	_ = emergency
 	_ = db
