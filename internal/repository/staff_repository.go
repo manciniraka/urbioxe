@@ -150,7 +150,7 @@ func (sr *staffRepository) GetByID(id uint) (*entity.StaffProfile, error) {
 	return &staff, nil
 }
 
-func (sr *staffRepository) UpdateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error{
+func (sr *staffRepository) UpdateStaffTx(tx *gorm.DB, staff *entity.StaffProfile) error {
 	return tx.
 		Model(&entity.StaffProfile{}).
 		Where("id = ?", staff.ID).

@@ -28,15 +28,15 @@ func InitRouter(
 	RegisterUserRoutes(e, db, cfg)
 
 	// Master Data
-	RegisterDistrictRoutes(e, db)
-	RegisterDepartmentRoutes(e, db)
-	RegisterCategoryRoutes(e, db)
+	RegisterDistrictRoutes(e, db,cfg)
+	RegisterDepartmentRoutes(e, db, cfg)
+	RegisterCategoryRoutes(e, db, cfg)
 
 	// Staff
 	RegisterStaffRoutes(e, db, cfg)
 
 	// Reports
-	RegisterReportRoutes(e, db)
+	RegisterReportRoutes(e, db, cfg)
 
 	// Public Information
 	RegisterRegionalNewsRoutes(e, db)
