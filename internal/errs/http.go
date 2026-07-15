@@ -15,7 +15,14 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrSamePassword),
 		errors.Is(err, ErrReportNotAssigned),
 		errors.Is(err, ErrCategoryAlreadyExists),
-		errors.Is(err, ErrHomeDistrictNotSet):
+		errors.Is(err, ErrHomeDistrictNotSet),
+		errors.Is(err, ErrInvalidStaffPosition),
+		errors.Is(err, ErrReportShouldInProcess),
+		errors.Is(err, ErrReportShouldPending),
+		errors.Is(err, ErrReportAlreadyResolved),
+		errors.Is(err, ErrReportAlreadyRejected),
+		errors.Is(err, ErrReportAlreadyInProcess),
+		errors.Is(err, ErrCategoryAlreadyExists):
 		return http.StatusBadRequest
 
 	// 401 Unauthorized
@@ -25,7 +32,9 @@ func StatusCode(err error) int {
 
 	// 403 Forbidden
 	case errors.Is(err, ErrForbidden),
-		errors.Is(err, ErrReportForbidden):
+		errors.Is(err, ErrReportForbidden),
+		errors.Is(err, ErrReportAssignForbidden),
+		errors.Is(err, ErrReportUpdateForbidden):
 		return http.StatusForbidden
 
 	// 404 Not Found

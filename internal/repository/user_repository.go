@@ -7,6 +7,7 @@ import (
 
 type UserRepository interface {
 	Register(user *entity.User) error
+	RegisterUserTx(tx *gorm.DB, user *entity.User) error
 
 	FindByEmail(email string) (*entity.User, error)
 	FindByNIK(nik string) (*entity.User, error)
@@ -14,6 +15,7 @@ type UserRepository interface {
 	GetByID(id uint) (*entity.User, error)
 	UpdateProfile(user *entity.User) error
 	UpdatePassword(id uint, password string) error
+	UpdateUserTx(tx *gorm.DB, user *entity.User) error
 }
 
 type userRepository struct {
@@ -28,6 +30,10 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (ur *userRepository) Register(user *entity.User) error {
 	return ur.db.Create(user).Error
+}
+
+func (ur *userRepository) RegisterUserTx(tx *gorm.DB, user *entity.User) error {
+	return tx.Create(user).Error
 }
 
 func (ur *userRepository) FindByEmail(email string) (*entity.User, error) {
@@ -85,4 +91,14 @@ func (ur *userRepository) UpdatePassword(id uint, password string) error {
 		Where("id = ?", id).
 		Update("password", password).
 		Error
+}
+
+func (ur *userRepository) UpdateUserTx(tx *gorm.DB, user *entity.User) error {
+	return tx.
+		Model(&entity.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]any{
+			"phone_number": user.PhoneNumber,
+			"role":         user.Role,
+		}).Error
 }

@@ -81,8 +81,8 @@ CREATE TABLE users (
 
 CREATE TABLE staff_profiles (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGSERIAL UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    department_id BIGSERIAL NOT NULL REFERENCES departments(id),
+    user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    department_id BIGINT NOT NULL REFERENCES departments(id),
     employee_number VARCHAR(50) UNIQUE NOT NULL,
     position staff_position,
     is_active BOOLEAN DEFAULT TRUE,
@@ -93,7 +93,7 @@ CREATE TABLE staff_profiles (
 
 CREATE TABLE categories (
     id BIGSERIAL PRIMARY KEY,
-    department_id BIGSERIAL NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
+    department_id BIGINT NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
@@ -106,9 +106,9 @@ CREATE TABLE categories (
 
 CREATE TABLE reports (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGSERIAL NOT NULL REFERENCES users(id),
-    category_id BIGSERIAL NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
-    incident_district_id BIGSERIAL NOT NULL REFERENCES districts(id),
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    incident_district_id BIGINT NOT NULL REFERENCES districts(id),
     assigned_staff_id BIGINT REFERENCES staff_profiles(id),
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE reports (
 
 CREATE TABLE report_attachments (
     id BIGSERIAL PRIMARY KEY,
-    report_id BIGSERIAL NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    report_id BIGINT NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
     file_url TEXT NOT NULL,
     type attachment_type NOT NULL,
 
@@ -136,7 +136,7 @@ CREATE TABLE report_attachments (
 
 CREATE TABLE report_histories (
     id BIGSERIAL PRIMARY KEY,
-    report_id BIGSERIAL NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    report_id BIGINT NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
     status report_status NOT NULL,
     notes TEXT,
     is_internal BOOLEAN DEFAULT FALSE,
@@ -175,16 +175,21 @@ CREATE TABLE emergency_contacts (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE weather_caches (
+CREATE TABLE weather_forecasts (
     id BIGSERIAL PRIMARY KEY,
-    district_id BIGSERIAL UNIQUE REFERENCES districts(id),
-    temperature NUMERIC(5,2),
-    humidity INTEGER,
-    weather VARCHAR(100),
-    air_quality INTEGER,
+    district_id BIGINT NOT NULL REFERENCES districts(id),
+    forecast_time TIMESTAMP NOT NULL,
+    temperature DECIMAL(5,2) NOT NULL,
+    humidity INTEGER NOT NULL,
+    weather VARCHAR(100) NOT NULL,
 
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+
+    UNIQUE (
+        district_id,
+        forecast_time
+    )
 );
 
 CREATE INDEX idx_reports_status
@@ -207,6 +212,3 @@ ON regional_news(district_id);
 
 CREATE INDEX idx_staff_department
 ON staff_profiles(department_id);
-
-CREATE INDEX idx_weather_district
-ON weather_cache(district_id);
