@@ -283,6 +283,14 @@ func (rs *reportService) GetAllReports(param GetReportsParam) (*ReportListRespon
 		Offset:     offset,
 	}
 
+	if param.Role != "citizen" {
+		staff, err := rs.staffRepo.FindStaffByUserID(param.UserID)
+		if err != nil {
+			return nil, err
+		}
+		repoFilter.UserID = staff.ID
+	}
+
 	reports, totalData, err := rs.repo.FindAll(repoFilter)
 	if err != nil {
 		return nil, err
