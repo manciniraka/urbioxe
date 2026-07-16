@@ -56,4 +56,6 @@ func RegisterWaterRoutes(
 			entity.RoleSuperAdmin,
 		),
 	)
+
+	water.POST("/bill/simulate", waterController.SimulateBill)
 }

@@ -1,8 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/dto"
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/errs"
@@ -15,6 +17,8 @@ type WaterService interface {
 	GetWaterStatusByDistrictID(districtID uint) (*dto.WaterStatusResponse, error)
 	GetMyWaterStatus(userID uint) (*dto.WaterStatusResponse, error)
 	GetWaterStatusHistories() ([]dto.WaterHistoryResponse, error)
+
+	SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error)
 }
 
 
@@ -240,3 +244,85 @@ func (ws *waterService) GetWaterStatusHistories() ([]dto.WaterHistoryResponse,	e
 
 	return responses, nil
 }
+
+func (ws *waterService) SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error) {
+	tariff, err := config.GetWaterTariff(input.TariffGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	usage := input.Usage
+
+	billableUsage := usage
+
+	if billableUsage < tariff.MinimumUsage {
+		billableUsage = tariff.MinimumUsage
+	}
+
+	totalBill := 0
+
+	var breakdown []dto.BillBreakdown
+
+	remaining := billableUsage
+
+	for _, block := range tariff.Blocks {
+		if remaining <= 0 {
+			break
+		}
+
+		blockCapacity := 0
+
+		if block.To == -1 {
+			blockCapacity = remaining
+		} else {
+			blockCapacity = block.To - block.From + 1
+
+			if remaining < blockCapacity {
+				blockCapacity = remaining
+			}
+		}
+
+		subtotal := blockCapacity * block.PricePerM3
+
+		rangeLabel := ""
+
+		if block.To == -1 {
+		
+			rangeLabel = fmt.Sprintf(
+				"%d+",
+				block.From,
+			)
+		
+		} else {
+		
+			rangeLabel = fmt.Sprintf(
+				"%d-%d",
+				block.From,
+				block.To,
+			)
+		}
+
+		breakdown = append(
+			breakdown,
+			dto.BillBreakdown{
+				Range: rangeLabel,
+				Usage: blockCapacity,
+				PricePerM3: block.PricePerM3,
+				Subtotal: subtotal,
+			},
+		)
+		totalBill += subtotal
+		remaining -= blockCapacity
+	}
+
+	return &dto.BillSimulationResponse{
+		TariffGroup: tariff.Code,
+		TariffName: tariff.Name,
+		Usage: usage,
+		MinimumUsage: tariff.MinimumUsage,
+		BillableUsage: billableUsage,
+		TotalBill: totalBill,
+		Breakdown: breakdown,
+	}, nil
+}
+

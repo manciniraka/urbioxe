@@ -140,3 +140,34 @@ func (wc *WaterController) GetWaterStatusHistories(c echo.Context) error {
 	)
 }
 
+func (wc *WaterController) SimulateBill(c echo.Context) error {
+	var input dto.BillSimulationRequest
+
+	if err := c.Bind(&input); err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	if err := c.Validate(&input); err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	response, err := wc.waterService.SimulateBill(input)
+	if err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	return helper.Success(
+		c,
+		"water bill simulated successfully",
+		response,
+	)
+}

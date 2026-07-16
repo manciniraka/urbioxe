@@ -50,7 +50,8 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrWeatherNotFound),
 		errors.Is(err, ErrWeatherForecastNotFound),
 		errors.Is(err, ErrDistrictCoordinateNotFound),
-		errors.Is(err, ErrWaterStatusNotFound):
+		errors.Is(err, ErrWaterStatusNotFound),
+		errors.Is(err, ErrWaterTariffNotFound):
 		return http.StatusNotFound
 
 	// 409 Conflict
