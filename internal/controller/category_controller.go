@@ -16,6 +16,16 @@ func NewCategoryController(svc service.CategoryService) *CategoryController {
 	return &CategoryController{svc: svc}
 }
 
+// GetAll godoc
+//
+//	@Summary		Get all categories
+//	@Description	Get all categories
+//	@Tags			Category
+//	@Produce		json
+//	@Param			active_only	query		bool	false	"Show only active categories"
+//	@Success		200			{object}	helper.Response
+//	@Failure		500			{object}	helper.ErrorResponse
+//	@Router			/categories [get]
 func (cc *CategoryController) GetAll(c echo.Context) error {
 	activeOnlyParam := c.QueryParam("active_only")
 	isOnlyActive := activeOnlyParam == "true"
@@ -28,6 +38,18 @@ func (cc *CategoryController) GetAll(c echo.Context) error {
 	return helper.Success(c, "success get all categories", categories)
 }
 
+// GetByID godoc
+//
+//	@Summary		Get category by ID
+//	@Description	Retrieve category detail
+//	@Tags			Category
+//	@Produce		json
+//	@Param			id	path		int	true	"Category ID"
+//	@Success		200	{object}	helper.Response
+//	@Failure		400	{object}	helper.ErrorResponse
+//	@Failure		404	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/categories/{id} [get]
 func (cc *CategoryController) GetByID(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
@@ -43,6 +65,20 @@ func (cc *CategoryController) GetByID(c echo.Context) error {
 	return helper.Success(c, "succes get category", category)
 }
 
+// Create godoc
+//
+//	@Summary		Create category
+//	@Description	Create a new category
+//	@Tags			Category
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		service.CreateCategoryInput	true	"Category data"
+//	@Success		201		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/categories [post]
 func (cc *CategoryController) Create(c echo.Context) error {
 	role := helper.GetUserRole(c)
 
@@ -62,6 +98,22 @@ func (cc *CategoryController) Create(c echo.Context) error {
 	return helper.Created(c, "success create category", category)
 }
 
+// Update godoc
+//
+//	@Summary		Update category
+//	@Description	Update category
+//	@Tags			Category
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"Category ID"
+//	@Param			request	body		service.UpdateCategoryInput	true	"Category data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/categories/{id} [put]
 func (cc *CategoryController) Update(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
@@ -88,6 +140,22 @@ func (cc *CategoryController) Update(c echo.Context) error {
 	return helper.Success(c, "success update category", category)
 }
 
+// ToggleStatus godoc
+//
+//	@Summary		Toggle category status
+//	@Description	Enable or disable category
+//	@Tags			Category
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int									true	"Category ID"
+//	@Param			request	body		service.ToggleCategoryStatusInput	true	"Status data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/categories/{id}/status [patch]
 func (cc *CategoryController) ToggleStatus(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)

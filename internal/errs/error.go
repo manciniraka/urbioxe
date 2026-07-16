@@ -5,5 +5,3 @@ type AppError struct {
 	Message string
 	Err     error
 }
-
-

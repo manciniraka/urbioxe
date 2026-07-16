@@ -36,6 +36,7 @@ func (dr *districtRepository) GetAll() ([]entity.District, error) {
 	var districts []entity.District
 
 	err := dr.db.
+		Where("is_active = ?", true).
 		Order("name ASC").
 		Find(&districts).Error
 
@@ -46,7 +47,7 @@ func (dr *districtRepository) GetAll() ([]entity.District, error) {
 	return districts, nil
 }
 
-func (dr *districtRepository) GetByID(id uint) (*entity.District, error){
+func (dr *districtRepository) GetByID(id uint) (*entity.District, error) {
 	var district entity.District
 
 	err := dr.db.
@@ -70,7 +71,7 @@ func (dr *districtRepository) GetByID(id uint) (*entity.District, error){
 	return &district, nil
 }
 
-func (dr *districtRepository) GetByName(name string) (*entity.District, error){
+func (dr *districtRepository) GetByName(name string) (*entity.District, error) {
 	var district entity.District
 
 	err := dr.db.
@@ -95,14 +96,14 @@ func (dr *districtRepository) GetByName(name string) (*entity.District, error){
 	return &district, nil
 }
 
-func (dr *districtRepository) Create(district *entity.District) error{
+func (dr *districtRepository) Create(district *entity.District) error {
 	return dr.db.Create(district).Error
 }
 
-func (dr *districtRepository) Update(district *entity.District) error{
+func (dr *districtRepository) Update(district *entity.District) error {
 	return dr.db.
 		Model(&entity.District{}).
-		Where("id = ?",	district.ID).
+		Where("id = ?", district.ID).
 		Updates(
 			map[string]any{
 				"is_active": district.IsActive,

@@ -44,60 +44,60 @@ func NewStaffService(
 }
 
 type CreateStaffInput struct {
-	NIK          string          `json:"nik" validate:"required,len=16"`
-	Name         string          `json:"name" validate:"required"`
-	Email        string          `json:"email" validate:"required,email"`
-	PhoneNumber  string          `json:"phone_number"`
-	DepartmentID uint            `json:"department_id" validate:"required"`
+	NIK          string               `json:"nik" validate:"required,len=16"`
+	Name         string               `json:"name" validate:"required"`
+	Email        string               `json:"email" validate:"required,email"`
+	PhoneNumber  string               `json:"phone_number"`
+	DepartmentID uint                 `json:"department_id" validate:"required"`
 	Position     entity.StaffPosition `json:"position" validate:"required"`
-	JoinDate string `json:"join_date" validate:"required"`
+	JoinDate     string               `json:"join_date" validate:"required"`
 }
 
 type StaffSummary struct {
 	ID             uint                 `json:"id"`
 	EmployeeNumber string               `json:"employee_number"`
-	Name string `json:"name"`
-	DepartmentID uint `json:"department_id"`
-	DepartmentName string `json:"department_name"`
-	Position entity.StaffPosition `json:"position"`
-	IsActive bool `json:"is_active"`
+	Name           string               `json:"name"`
+	DepartmentID   uint                 `json:"department_id"`
+	DepartmentName string               `json:"department_name"`
+	Position       entity.StaffPosition `json:"position"`
+	IsActive       bool                 `json:"is_active"`
 }
 
 type StaffDetail struct {
-	ID uint `json:"id"`
-	UserID uint `json:"user_id"`
-	DepartmentID uint `json:"department_id"`
-	EmployeeNumber string `json:"employee_number"`
-	NIK string `json:"nik"`
-	Name string `json:"name"`
-	Email string `json:"email"`
-	PhoneNumber string `json:"phone_number"`
-	DepartmentName string `json:"department_name"`
-	Position entity.StaffPosition `json:"position"`
-	JoinDate string `json:"join_date"`
-	IsActive bool `json:"is_active"`
+	ID             uint                 `json:"id"`
+	UserID         uint                 `json:"user_id"`
+	DepartmentID   uint                 `json:"department_id"`
+	EmployeeNumber string               `json:"employee_number"`
+	NIK            string               `json:"nik"`
+	Name           string               `json:"name"`
+	Email          string               `json:"email"`
+	PhoneNumber    string               `json:"phone_number"`
+	DepartmentName string               `json:"department_name"`
+	Position       entity.StaffPosition `json:"position"`
+	JoinDate       string               `json:"join_date"`
+	IsActive       bool                 `json:"is_active"`
 }
 
 type UpdateStaffInput struct {
-	DepartmentID uint `json:"department_id" validate:"required"`
-	Position entity.StaffPosition `json:"position" validate:"required"`
-	PhoneNumber string `json:"phone_number"`
-	IsActive bool `json:"is_active"`
+	DepartmentID uint                 `json:"department_id" validate:"required"`
+	Position     entity.StaffPosition `json:"position" validate:"required"`
+	PhoneNumber  string               `json:"phone_number"`
+	IsActive     bool                 `json:"is_active"`
 }
 
 func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfile, error) {
 	var userRole entity.UserRole
 
 	switch input.Position {
-		case entity.PositionFieldOfficer:
-			userRole = entity.RoleOfficer
-		case entity.PositionDepartmentAdmin:
-			userRole = entity.RoleDepartmentAdmin
-		case entity.PositionSupervisor:
-			userRole = entity.RoleSuperAdmin
+	case entity.PositionFieldOfficer:
+		userRole = entity.RoleOfficer
+	case entity.PositionDepartmentAdmin:
+		userRole = entity.RoleDepartmentAdmin
+	case entity.PositionSupervisor:
+		userRole = entity.RoleSuperAdmin
 
-		default:
-			return nil, errs.ErrInvalidStaffPosition
+	default:
+		return nil, errs.ErrInvalidStaffPosition
 	}
 
 	existingUser, err := ss.userRepo.FindByEmail(input.Email)
@@ -138,25 +138,25 @@ func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfil
 	}
 
 	joinDate, err := time.Parse(
-	    "2006-01-02",
-	    input.JoinDate,
+		"2006-01-02",
+		input.JoinDate,
 	)
 	if err != nil {
-	    return nil, errs.ErrBadRequest
+		return nil, errs.ErrBadRequest
 	}
 
 	lastSequence, err := ss.staffRepo.GetLastEmployeeSequence(
-	    input.DepartmentID,
-	    joinDate,
+		input.DepartmentID,
+		joinDate,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	employeeNumber := helper.GenerateEmployeeNumber(
-	    department.Code,
-	    joinDate,
-	    lastSequence,
+		department.Code,
+		joinDate,
+		lastSequence,
 	)
 
 	temporaryPassword, err := helper.GenerateTemporaryPassword(department.Code)
@@ -277,25 +277,25 @@ func (ss *staffService) GetStaffByID(id uint) (*StaffDetail, error) {
 	}
 
 	detail := &StaffDetail{
-	ID: staff.ID,
-	UserID: staff.UserID,
-	DepartmentID: staff.DepartmentID,
-	EmployeeNumber: staff.EmployeeNumber,
-	NIK: staff.User.NIK,
-	Name: staff.User.Name,
-	Email: staff.User.Email,
-	PhoneNumber: staff.User.PhoneNumber,
-	DepartmentName: staff.Department.Name,
-	Position: staff.Position,
-	JoinDate: staff.JoinDate,
-	IsActive: staff.IsActive,
+		ID:             staff.ID,
+		UserID:         staff.UserID,
+		DepartmentID:   staff.DepartmentID,
+		EmployeeNumber: staff.EmployeeNumber,
+		NIK:            staff.User.NIK,
+		Name:           staff.User.Name,
+		Email:          staff.User.Email,
+		PhoneNumber:    staff.User.PhoneNumber,
+		DepartmentName: staff.Department.Name,
+		Position:       staff.Position,
+		JoinDate:       staff.JoinDate,
+		IsActive:       staff.IsActive,
+	}
+
+	return detail, nil
 }
 
-return detail, nil
-}
-
-func (ss *staffService) UpdateStaff(id uint, input UpdateStaffInput) (*entity.StaffProfile, error){
-staff, err := ss.staffRepo.GetByID(
+func (ss *staffService) UpdateStaff(id uint, input UpdateStaffInput) (*entity.StaffProfile, error) {
+	staff, err := ss.staffRepo.GetByID(
 		id,
 	)
 	if err != nil {

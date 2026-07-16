@@ -22,6 +22,24 @@ func NewReportController(
 	}
 }
 
+// CreateReport godoc
+//
+//	@Summary		Create report
+//	@Description	Create a new report
+//	@Tags			Report
+//	@Accept			mpfd
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			title					formData	string	true	"Report title"
+//	@Param			description			formData	string	true	"Report description"
+//	@Param			category_id			formData	int		true	"Category ID"
+//	@Param			incident_district_id	formData	int		true	"Incident District ID"
+//	@Param			images					formData	file	true	"Evidence images"
+//	@Success		201	{object}	helper.Response
+//	@Failure		400	{object}	helper.ErrorResponse
+//	@Failure		401	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/reports [post]
 func (rc *ReportController) Create(c echo.Context) error {
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -60,6 +78,17 @@ func (rc *ReportController) Create(c echo.Context) error {
 	)
 }
 
+// GetAllReports godoc
+//
+//	@Summary		Get all reports
+//	@Description	Retrieve all reports
+//	@Tags			Report
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	helper.Response
+//	@Failure		401	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/reports [get]
 func (rc *ReportController) GetAll(c echo.Context) error {
 	userID := helper.GetUserID(c)
 	role := helper.GetUserRole(c)
@@ -94,6 +123,19 @@ func (rc *ReportController) GetAll(c echo.Context) error {
 	})
 }
 
+// GetReportByID godoc
+//
+//	@Summary		Get report by ID
+//	@Description	Retrieve report detail
+//	@Tags			Report
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		int	true	"Report ID"
+//	@Success		200	{object}	helper.Response
+//	@Failure		400	{object}	helper.ErrorResponse
+//	@Failure		404	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/reports/{id} [get]
 func (rc *ReportController) GetByID(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
@@ -112,6 +154,22 @@ func (rc *ReportController) GetByID(c echo.Context) error {
 	return helper.Success(c, "success get report", result)
 }
 
+// UpdateReport godoc
+//
+//	@Summary		Update report
+//	@Description	Update report
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"Report ID"
+//	@Param			request	body		service.UpdateReportInput	true	"Report data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id} [put]
 func (rc *ReportController) Update(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
@@ -134,6 +192,22 @@ func (rc *ReportController) Update(c echo.Context) error {
 	return helper.Success(c, "success update report", result)
 }
 
+// AssignReport godoc
+//
+//	@Summary		Assign report
+//	@Description	Assign report to staff
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"Report ID"
+//	@Param			request	body		service.AssignReportInput	true	"Assignment data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/assign [patch]
 func (rc *ReportController) Assign(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
@@ -160,6 +234,22 @@ func (rc *ReportController) Assign(c echo.Context) error {
 	return helper.Success(c, "Success assign officer to this report", nil)
 }
 
+// StartReport godoc
+//
+//	@Summary		Start report handling
+//	@Description	Mark report status as in progress
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int								true	"Report ID"
+//	@Param			request	body		service.UpdateStatusReportInput	true	"Status data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/start [patch]
 func (rc *ReportController) Start(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
@@ -181,6 +271,23 @@ func (rc *ReportController) Start(c echo.Context) error {
 	return helper.Success(c, "Report handled started. Status: in progress", nil)
 }
 
+// ResolveReport godoc
+//
+//	@Summary		Resolve report
+//	@Description	Mark report as resolved
+//	@Tags			Report
+//	@Accept			mpfd
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int		true	"Report ID"
+//	@Param			notes	formData	string	true	"Resolution notes"
+//	@Param			images	formData	file	true	"Resolution images"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/resolve [patch]
 func (rc *ReportController) Resolve(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
@@ -210,6 +317,22 @@ func (rc *ReportController) Resolve(c echo.Context) error {
 	return helper.Success(c, "Report mark as resolve", nil)
 }
 
+// RejectReport godoc
+//
+//	@Summary		Reject report
+//	@Description	Reject report
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int								true	"Report ID"
+//	@Param			request	body		service.UpdateStatusReportInput	true	"Reject data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/reject [patch]
 func (rc *ReportController) Reject(c echo.Context) error {
 	idParam := c.Param("id")
 	reportID, err := strconv.ParseUint(idParam, 10, 64)
@@ -236,6 +359,22 @@ func (rc *ReportController) Reject(c echo.Context) error {
 	return helper.Success(c, "success reject report", nil)
 }
 
+// VerifyReport godoc
+//
+//	@Summary		Verify report
+//	@Description	Verify report
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int								true	"Report ID"
+//	@Param			request	body		service.UpdateStatusReportInput	true	"Verification data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/verify [patch]
 func (rc *ReportController) Verify(c echo.Context) error {
 	idParam := c.Param("id")
 	id64, err := strconv.ParseUint(idParam, 10, 64)
@@ -259,6 +398,22 @@ func (rc *ReportController) Verify(c echo.Context) error {
 	return helper.Success(c, "success verified report", nil)
 }
 
+// UpdatePriority godoc
+//
+//	@Summary		Update report priority
+//	@Description	Update report priority
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"Report ID"
+//	@Param			request	body		service.UpdatePriorityInput	true	"Priority data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/priority [patch]
 func (rc *ReportController) UpdatePriority(c echo.Context) error {
 	idParam := c.Param("id")
 	id64, err := strconv.ParseUint(idParam, 10, 64)
@@ -285,6 +440,22 @@ func (rc *ReportController) UpdatePriority(c echo.Context) error {
 	return helper.Success(c, "success update priority", nil)
 }
 
+// ReassignReport godoc
+//
+//	@Summary		Reassign report
+//	@Description	Reassign report to another staff
+//	@Tags			Report
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"Report ID"
+//	@Param			request	body		service.ReassignReportInput	true	"Reassign data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/reports/{id}/reassign [patch]
 func (rc *ReportController) Reassign(c echo.Context) error {
 	idParam := c.Param("id")
 	id64, err := strconv.ParseUint(idParam, 10, 64)

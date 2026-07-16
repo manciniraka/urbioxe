@@ -43,5 +43,5 @@ func InitRouter(
 	RegisterEmergencyContactRoutes(e, db, cfg)
 
 	// Weather
-	RegisterWeatherRoutes(e, db)
+	RegisterBMKGRoutes(e, db, cfg)
 }
