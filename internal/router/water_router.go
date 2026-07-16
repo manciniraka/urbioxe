@@ -1,0 +1,59 @@
+package router
+
+import (
+	"github.com/labstack/echo/v4"
+
+	"github.com/manciniraka/urbioxe/internal/config"
+	"github.com/manciniraka/urbioxe/internal/controller"
+	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/middleware"
+	"github.com/manciniraka/urbioxe/internal/repository"
+	"github.com/manciniraka/urbioxe/internal/service"
+
+	"gorm.io/gorm"
+)
+
+func RegisterWaterRoutes(
+	e *echo.Echo,
+	db *gorm.DB,
+	cfg *config.Config,
+) {
+	waterRepo := repository.NewWaterRepository(db)
+	districtRepo := repository.NewDistrictRepository(db)
+	userRepo := repository.NewUserRepository(db)
+	waterService := service.NewWaterService(
+		waterRepo,
+		districtRepo,
+		userRepo,
+	)
+	waterController := controller.NewWaterController(waterService)
+
+	water := e.Group("/water")
+
+	water.GET("", waterController.GetAllWaterStatus)
+	water.GET(
+		"/me",
+		waterController.GetMyWaterStatus,
+		middleware.AuthMiddleware(cfg),
+	)
+	water.GET("/:district_id", waterController.GetWaterStatusByDistrictID)
+	water.POST(
+		"",
+		waterController.CreateWaterStatus,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles(
+			entity.RoleDepartmentAdmin,
+			entity.RoleSuperAdmin,
+		),
+	)
+	water.GET(
+		"/histories",
+		waterController.GetWaterStatusHistories,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles(
+			entity.RoleOfficer,
+			entity.RoleDepartmentAdmin,
+			entity.RoleSuperAdmin,
+		),
+	)
+}

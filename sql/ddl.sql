@@ -192,6 +192,25 @@ CREATE TABLE weather_forecasts (
     )
 );
 
+CREATE TABLE water_statuses (
+    id BIGSERIAL PRIMARY KEY,
+    district_id BIGINT NOT NULL REFERENCES districts(id),
+    status VARCHAR(30) NOT NULL,
+    started_at TIMESTAMP NOT NULL,
+    estimated_duration INTEGER NOT NULL,
+    estimated_recovery_at TIMESTAMP NOT NULL,
+    reason TEXT,
+    created_by BIGINT NOT NULL REFERENCES users(id),
+
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_water_status_district
+ON water_statuses(district_id);
+
+CREATE INDEX idx_water_status_created
+ON water_statuses(created_at DESC);
+
 CREATE INDEX idx_reports_status
 ON reports(status);
 
