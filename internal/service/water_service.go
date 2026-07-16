@@ -2,8 +2,10 @@ package service
 
 import (
 	"fmt"
+	"mime/multipart"
 	"time"
 
+	"github.com/manciniraka/urbioxe/external/cloudinary"
 	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/dto"
 	"github.com/manciniraka/urbioxe/internal/entity"
@@ -19,6 +21,11 @@ type WaterService interface {
 	GetWaterStatusHistories() ([]dto.WaterHistoryResponse, error)
 
 	SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error)
+	CreateMeterReading(
+		userID uint,
+		input dto.CreateMeterReadingInput,
+		fileHeader *multipart.FileHeader,
+	) (*dto.MeterReadingResponse, error)
 }
 
 
@@ -26,17 +33,24 @@ type waterService struct {
 	waterRepo repository.WaterRepository
 	districtRepo repository.DistrictRepository
 	userRepo repository.UserRepository
+
+	meterReadingRepo repository.MeterReadingRepository
+    cloudinaryService cloudinary.CloudinaryService
 }
 
 func NewWaterService(
 	waterRepo repository.WaterRepository,
 	districtRepo repository.DistrictRepository,
 	userRepo repository.UserRepository,
+	meterReadingRepo repository.MeterReadingRepository,
+    cloudinaryService cloudinary.CloudinaryService,
 ) WaterService {
 	return &waterService{
 		waterRepo: waterRepo,
 		districtRepo: districtRepo,
 		userRepo: userRepo,
+		meterReadingRepo: meterReadingRepo,
+		cloudinaryService: cloudinaryService,
 	}
 }
 
@@ -287,14 +301,14 @@ func (ws *waterService) SimulateBill(input dto.BillSimulationRequest) (*dto.Bill
 		rangeLabel := ""
 
 		if block.To == -1 {
-		
+
 			rangeLabel = fmt.Sprintf(
 				"%d+",
 				block.From,
 			)
-		
+
 		} else {
-		
+
 			rangeLabel = fmt.Sprintf(
 				"%d-%d",
 				block.From,
@@ -326,3 +340,47 @@ func (ws *waterService) SimulateBill(input dto.BillSimulationRequest) (*dto.Bill
 	}, nil
 }
 
+func (ws *waterService) CreateMeterReading(
+	userID uint,
+	input dto.CreateMeterReadingInput,
+	fileHeader *multipart.FileHeader,
+) (*dto.MeterReadingResponse, error) {
+	location, _ := time.LoadLocation(
+		"Asia/Jakarta",
+	)
+
+	photoURL, err := ws.cloudinaryService.UploadImage(
+		fileHeader,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	meterReading := entity.MeterReading{
+		UserID: userID,
+		CustomerNumber: input.CustomerNumber,
+		CurrentReading: input.CurrentReading,
+		PhotoURL: photoURL,
+		Status: entity.MeterReadingPending,
+	}
+
+	err = ws.meterReadingRepo.CreateMeterReading(
+		&meterReading,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	response := dto.MeterReadingResponse{
+		CustomerNumber: meterReading.CustomerNumber,
+		CurrentReading: meterReading.CurrentReading,
+		PhotoURL: meterReading.PhotoURL,
+		Status: meterReading.Status,
+		SubmittedAt: meterReading.
+			CreatedAt.
+			In(location).
+			Format("02 Jan 2006 15:04 WIB"),
+	}
+
+	return &response, nil
+}

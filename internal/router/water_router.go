@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/labstack/echo/v4"
 
+	"github.com/manciniraka/urbioxe/external/cloudinary"
 	"github.com/manciniraka/urbioxe/internal/config"
 	"github.com/manciniraka/urbioxe/internal/controller"
 	"github.com/manciniraka/urbioxe/internal/entity"
@@ -21,10 +22,21 @@ func RegisterWaterRoutes(
 	waterRepo := repository.NewWaterRepository(db)
 	districtRepo := repository.NewDistrictRepository(db)
 	userRepo := repository.NewUserRepository(db)
+
+	cloudinaryService := cloudinary.NewCloudinaryService(
+		cfg.CloudinaryCloudName,
+		cfg.CloudinaryAPIKey,
+		cfg.CloudinaryAPISecret,
+	)
+
+	meterReadingRepo := repository.NewMeterReadingRepository(db)
+
 	waterService := service.NewWaterService(
 		waterRepo,
 		districtRepo,
 		userRepo,
+		meterReadingRepo,
+		cloudinaryService,
 	)
 	waterController := controller.NewWaterController(waterService)
 
@@ -58,4 +70,10 @@ func RegisterWaterRoutes(
 	)
 
 	water.POST("/bill/simulate", waterController.SimulateBill)
+
+	water.POST(
+		"/meter-reading",
+		waterController.CreateMeterReading,
+		middleware.AuthMiddleware(cfg),
+	)
 }

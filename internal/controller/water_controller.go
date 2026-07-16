@@ -171,3 +171,49 @@ func (wc *WaterController) SimulateBill(c echo.Context) error {
 		response,
 	)
 }
+
+func (wc *WaterController) CreateMeterReading(c echo.Context) error {
+	var input dto.CreateMeterReadingInput
+
+	if err := c.Bind(&input); err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	if err := c.Validate(&input); err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	fileHeader, err := c.FormFile("photo")
+	if err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	userID := helper.GetUserID(c)
+
+	response, err := wc.waterService.CreateMeterReading(
+		userID,
+		input,
+		fileHeader,
+	)
+	if err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	return helper.Created(
+		c,
+		"meter reading submitted successfully",
+		response,
+	)
+}
