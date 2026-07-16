@@ -6,6 +6,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Response struct {
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
+}
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func Success(
 	c echo.Context,
 	message string,

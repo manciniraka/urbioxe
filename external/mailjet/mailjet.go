@@ -282,6 +282,110 @@ Regards,<br>
 	)
 }
 
+func (c *Client) SendWelcomeStaffEmail(
+	name string,
+	email string,
+	department string,
+	employeeNumber string,
+	temporaryPassword string,
+) error {
+	subject := "Welcome to Urbioxe Staff!"
+
+	textBody := fmt.Sprintf(
+		`Welcome, %s!
+
+Your Urbioxe staff account has been created successfully.
+
+Department       : %s
+Employee Number  : %s
+
+Temporary Login Credential
+
+Email    : %s
+Password : %s
+
+For security reasons, please change your password after your first login.
+
+Regards,
+Urbioxe Team`,
+		name,
+		department,
+		employeeNumber,
+		email,
+		temporaryPassword,
+	)
+
+	htmlBody := fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+</head>
+
+<body style="font-family: Arial, Helvetica, sans-serif; line-height:1.6; color:#333333;">
+
+<h2>👋 Welcome, %s!</h2>
+
+<p>
+Your <strong>Urbioxe Staff</strong> account has been created successfully.
+</p>
+
+<h3>Staff Information</h3>
+
+<table cellpadding="6">
+<tr>
+<td><strong>Department</strong></td>
+<td>%s</td>
+</tr>
+
+<tr>
+<td><strong>Employee Number</strong></td>
+<td>%s</td>
+</tr>
+</table>
+
+<h3>Temporary Login Credential</h3>
+
+<table cellpadding="6">
+<tr>
+<td><strong>Email</strong></td>
+<td>%s</td>
+</tr>
+
+<tr>
+<td><strong>Password</strong></td>
+<td>%s</td>
+</tr>
+</table>
+
+<p style="color:#d9534f;">
+Please change your password after your first login.
+</p>
+
+<br>
+
+<p>
+Regards,<br>
+<strong>Urbioxe Team</strong>
+</p>
+
+</body>
+</html>`,
+		name,
+		department,
+		employeeNumber,
+		email,
+		temporaryPassword,
+	)
+
+	return c.SendEmail(
+		email,
+		name,
+		subject,
+		textBody,
+		htmlBody,
+	)
+}
+
 func (c *Client) SendReportCreatedEmail(
 	toEmail string,
 	toName string,
