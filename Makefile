@@ -7,11 +7,23 @@ mock-staff:
 	mockgen -source internal/repository/staff_repository.go -destination mocks/staff_mock_repo.go
 mock-cloudinary:
 	mockgen -source external/cloudinary/claudinary.go -destination mocks/cloudinary_mock_service.go
+mock-category:
+	mockgen -source internal/repository/category_repository.go -destination mocks/category_mock_repo.go
+mock-department:
+	mockgen -source internal/repository/department_repository.go -destination mocks/department_mock_repo.go
+mock-district:
+	mockgen -source internal/repository/district_repository.go -destination mocks/district_mock_repo.go
+mock-emergency:
+	mockgen -source internal/repository/emergency_repository.go -destination mocks/emergency_mock_repo.go
+mock-news:
+	mockgen -source internal/repository/news_repository.go -destination mocks/news_mock_repo.go
+mock-user:
+	mockgen -source internal/repository/user_repository.go -destination mocks/user_mock_repo.go
 
 #test
-test-reportSvc:
+test-service:
 	go test -v ./internal/service/... -coverprofile=report-coverage.out -cover -failfast
-test-reportSvc-coverage:
+test-service-coverage:
 	go test -v $$(go list ./internal/service/... | grep -v '/mock') -coverprofile=report-coverage.out -cover -failfast && \
 	go tool cover -html=report-coverage.out -o report-cover.html && \
 	open report-cover.html
