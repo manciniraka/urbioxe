@@ -11,6 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/manciniraka/urbioxe/external/mailjet"
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/repository"
 	service "github.com/manciniraka/urbioxe/internal/service"
 	"github.com/manciniraka/urbioxe/mocks"
 	"github.com/stretchr/testify/assert"
@@ -61,67 +62,110 @@ func TestReportServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(ReportServiceTestSuite))
 }
 
-func (suite *ReportServiceTestSuite) TestGetReports() {
+func (suite *ReportServiceTestSuite) TestGetAllReports() {
 	tests := []struct {
-		name          string
-		role          string
-		mockRepoFn    func()
-		expectedCount int
-		expectedError string
+		name       string
+		param      service.GetReportsParam
+		mockRepoFn func(p service.GetReportsParam)
+		verifyFn   func(res *service.ReportListResponse, err error)
 	}{
 		{
-			name: "Success - Super Admin views all reports with pagination",
-			role: "super_admin",
-			mockRepoFn: func() {
-				mockData := []entity.Report{
-					{ID: 1, Title: "Sampah Liar"},
-					{ID: 2, Title: "Pohon Tumbang"},
-				}
-				suite.mockRepo.EXPECT().FindAll(gomock.Any()).Return(mockData, int64(2), nil)
+			name: "Success - Get reports as Citizen (Uses default page and limit)",
+			param: service.GetReportsParam{
+				UserID: 10,
+				Role:   "citizen",
+				Page:   0,
+				Limit:  0,
 			},
-			expectedCount: 2,
-			expectedError: "",
+			mockRepoFn: func(p service.GetReportsParam) {
+				expectedFilter := repository.ReportFilter{
+					UserID: 10,
+					Role:   "citizen",
+					Limit:  10,
+					Offset: 0,
+				}
+				mockReports := []entity.Report{
+					{ID: 1, Title: "Jalan Rusak"},
+				}
+				suite.mockRepo.EXPECT().
+					FindAll(expectedFilter).
+					Return(mockReports, int64(1), nil)
+			},
+			verifyFn: func(res *service.ReportListResponse, err error) {
+				assert.Nil(suite.T(), err)
+				assert.NotNil(suite.T(), res)
+				assert.Equal(suite.T(), 1, res.Page)
+				assert.Equal(suite.T(), 10, res.Limit)
+				assert.Equal(suite.T(), int64(1), res.TotalData)
+				assert.Equal(suite.T(), 1, res.TotalPage)
+				assert.Len(suite.T(), res.Data, 1)
+			},
 		},
 		{
-			name: "Success - Officer views their assigned reports only",
-			role: "officer",
-			mockRepoFn: func() {
-				mockData := []entity.Report{
-					{ID: 3, Title: "Tiang Listrik Roboh"},
-				}
-				suite.mockRepo.EXPECT().FindAll(gomock.Any()).Return(mockData, int64(1), nil)
+			name: "Success - Get reports as Admin/Staff (Fetches Staff ID first)",
+			param: service.GetReportsParam{
+				UserID: 20,
+				Role:   "department_admin",
+				Page:   2,
+				Limit:  5,
 			},
-			expectedCount: 1,
-			expectedError: "",
+			mockRepoFn: func(p service.GetReportsParam) {
+				dummyStaff := &entity.StaffProfile{
+					ID:     77,
+					UserID: 20,
+				}
+				suite.mockStaffRepo.EXPECT().
+					FindStaffByUserID(uint(20)).
+					Return(dummyStaff, nil)
+
+				expectedFilter := repository.ReportFilter{
+					UserID: 77,
+					Role:   "department_admin",
+					Limit:  5,
+					Offset: 5,
+				}
+				mockReports := []entity.Report{
+					{ID: 2, Title: "Sampah Menumpuk"},
+				}
+				suite.mockRepo.EXPECT().
+					FindAll(expectedFilter).
+					Return(mockReports, int64(6), nil)
+			},
+			verifyFn: func(res *service.ReportListResponse, err error) {
+				assert.Nil(suite.T(), err)
+				assert.NotNil(suite.T(), res)
+				assert.Equal(suite.T(), 2, res.Page)
+				assert.Equal(suite.T(), 2, res.TotalPage)
+				assert.Equal(suite.T(), int64(6), res.TotalData)
+			},
+		},
+		{
+			name: "Fail - Staff Profile Not Found",
+			param: service.GetReportsParam{
+				UserID: 99,
+				Role:   "officer",
+			},
+			mockRepoFn: func(p service.GetReportsParam) {
+				suite.mockStaffRepo.EXPECT().
+					FindStaffByUserID(uint(99)).
+					Return(nil, errors.New("staff not found"))
+			},
+			verifyFn: func(res *service.ReportListResponse, err error) {
+				assert.NotNil(suite.T(), err)
+				assert.Nil(suite.T(), res)
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		suite.Run(tc.name, func() {
 			suite.SetupTest()
-			tc.mockRepoFn()
+			tc.mockRepoFn(tc.param)
 
 			svc := service.NewReportService(suite.mockRepo, suite.mockStaffRepo, suite.mockCldSvc, suite.mailer)
+			res, err := svc.GetAllReports(tc.param)
 
-			queryParams := service.GetReportsParam{
-				Page:  1,
-				Limit: 10,
-			}
-
-			response, err := svc.GetAllReports(queryParams)
-
-			if tc.expectedError != "" {
-				assert.NotNil(suite.T(), err)
-				assert.Nil(suite.T(), response)
-			} else {
-				assert.Nil(suite.T(), err)
-				assert.NotNil(suite.T(), response)
-
-				assert.Equal(suite.T(), int64(tc.expectedCount), response.TotalData)
-				assert.Len(suite.T(), response.Data, tc.expectedCount)
-				assert.Equal(suite.T(), queryParams.Page, response.Page)
-				assert.Equal(suite.T(), queryParams.Limit, response.Limit)
-			}
+			tc.verifyFn(res, err)
 		})
 	}
 }
