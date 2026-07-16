@@ -249,9 +249,6 @@ func (suite *ReportServiceTestSuite) TestVerifyReport() {
 	}
 }
 
-// ==========================================
-// 2. TEST CASES FOR UPDATE PRIORITY
-// ==========================================
 func (suite *ReportServiceTestSuite) TestUpdatePriority() {
 	adminID := uint(2)
 	reportID := uint(42)
@@ -640,7 +637,7 @@ func (suite *ReportServiceTestSuite) TestAssignReport() {
 				reportData := &entity.Report{
 					ID:              reportID,
 					Status:          entity.StatusVerified,
-					AssignedStaffID: nil, // Wajib nil agar lolos validasi
+					AssignedStaffID: nil,
 					User:            &entity.User{Email: "warga@mail.com", Name: "Rian"},
 				}
 				suite.mockRepo.EXPECT().FindByID(reportID, "department_admin").Return(reportData, nil)
