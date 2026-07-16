@@ -6,5 +6,5 @@ const (
 	LogTagCloudinary = "CLOUDINARY"
 	LogTagReport     = "REPORT"
 	LogTagDatabase   = "DATABASE"
-	LogTagBMKG      = "BMKG"
+	LogTagBMKG       = "BMKG"
 )

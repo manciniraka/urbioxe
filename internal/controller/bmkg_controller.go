@@ -30,6 +30,16 @@ func NewBMKGController(
 	}
 }
 
+// SyncForecasts godoc
+//
+//	@Summary		Sync weather forecasts
+//	@Description	Synchronize weather forecasts from BMKG
+//	@Tags			BMKG
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	helper.Response
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/weather/sync [post]
 func (bc *bmkgController) SyncForecasts(c echo.Context) error {
 	response, err := bc.bmkgService.SyncForecasts()
 	if err != nil {
@@ -46,6 +56,15 @@ func (bc *bmkgController) SyncForecasts(c echo.Context) error {
 	)
 }
 
+// GetAllWeather godoc
+//
+//	@Summary		Get all weather
+//	@Description	Retrieve weather information for all districts
+//	@Tags			BMKG
+//	@Produce		json
+//	@Success		200	{object}	helper.Response
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/weather [get]
 func (bc *bmkgController) GetAllWeather(c echo.Context) error {
 	weatherList, err := bc.bmkgService.GetAllWeather()
 	if err != nil {
@@ -58,13 +77,24 @@ func (bc *bmkgController) GetAllWeather(c echo.Context) error {
 	return c.JSON(
 		http.StatusOK,
 		map[string]any{
-			"message": "weather list retrieved successfully",
+			"message":  "weather list retrieved successfully",
 			"metadata": weatherList.Metadata,
-			"data": weatherList.Data,
+			"data":     weatherList.Data,
 		},
 	)
 }
 
+// GetWeatherDetailsByDistrictID godoc
+//
+//	@Summary		Get weather by district
+//	@Description	Retrieve weather details by district ID
+//	@Tags			BMKG
+//	@Produce		json
+//	@Param			district_id	path		int	true	"District ID"
+//	@Success		200			{object}	helper.Response
+//	@Failure		400			{object}	helper.ErrorResponse
+//	@Failure		404			{object}	helper.ErrorResponse
+//	@Router			/weather/{district_id} [get]
 func (bc *bmkgController) GetWeatherDetailsByDistrictID(c echo.Context) error {
 	districtID, err := strconv.Atoi(c.Param("district_id"))
 	if err != nil {
@@ -89,6 +119,17 @@ func (bc *bmkgController) GetWeatherDetailsByDistrictID(c echo.Context) error {
 	)
 }
 
+// GetMyWeather godoc
+//
+//	@Summary		Get my weather
+//	@Description	Retrieve weather based on authenticated user's district
+//	@Tags			BMKG
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	helper.Response
+//	@Failure		401	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/weather/me [get]
 func (bc *bmkgController) GetMyWeather(c echo.Context) error {
 	userID := c.Get("user_id").(uint)
 

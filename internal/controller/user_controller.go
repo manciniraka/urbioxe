@@ -18,6 +18,17 @@ func NewUserController(
 	}
 }
 
+// GetProfile godoc
+//
+//	@Summary		Get user profile
+//	@Description	Get authenticated user profile
+//	@Tags			User
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	helper.Response
+//	@Failure		401	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/users/profile [get]
 func (uc *UserController) GetProfile(c echo.Context) error {
 	userID := helper.GetUserID(c)
 
@@ -36,6 +47,20 @@ func (uc *UserController) GetProfile(c echo.Context) error {
 	)
 }
 
+// UpdateProfile godoc
+//
+//	@Summary		Update user profile
+//	@Description	Update authenticated user profile
+//	@Tags			User
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		service.UpdateProfileInput	true	"Profile data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/users/profile [put]
 func (uc *UserController) UpdateProfile(c echo.Context) error {
 	userID := helper.GetUserID(c)
 
@@ -74,6 +99,20 @@ func (uc *UserController) UpdateProfile(c echo.Context) error {
 	)
 }
 
+// ChangePassword godoc
+//
+//	@Summary		Change password
+//	@Description	Change authenticated user password
+//	@Tags			User
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		service.ChangePasswordInput	true	"Password data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/users/password [put]
 func (uc *UserController) ChangePassword(c echo.Context) error {
 	userID := helper.GetUserID(c)
 

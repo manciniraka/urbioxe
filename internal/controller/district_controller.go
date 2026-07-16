@@ -22,6 +22,15 @@ func NewDistrictController(
 	}
 }
 
+// GetAllDistrict godoc
+//
+//	@Summary		Get all districts
+//	@Description	Retrieve all districts
+//	@Tags			District
+//	@Produce		json
+//	@Success		200	{object}	helper.Response
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/districts [get]
 func (dc *DistrictController) GetAllDistrict(c echo.Context) error {
 	districts, err := dc.districtService.GetAllDistrict()
 	if err != nil {
@@ -38,6 +47,18 @@ func (dc *DistrictController) GetAllDistrict(c echo.Context) error {
 	)
 }
 
+// GetDistrictByID godoc
+//
+//	@Summary		Get district by ID
+//	@Description	Retrieve district detail
+//	@Tags			District
+//	@Produce		json
+//	@Param			id	path		int	true	"District ID"
+//	@Success		200	{object}	helper.Response
+//	@Failure		400	{object}	helper.ErrorResponse
+//	@Failure		404	{object}	helper.ErrorResponse
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/districts/{id} [get]
 func (dc *DistrictController) GetDistrictByID(c echo.Context) error {
 	id, err := strconv.Atoi(
 		c.Param("id"),
@@ -66,6 +87,20 @@ func (dc *DistrictController) GetDistrictByID(c echo.Context) error {
 	)
 }
 
+// CreateDistrict godoc
+//
+//	@Summary		Create district
+//	@Description	Create a new district
+//	@Tags			District
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		service.CreateDistrictInput	true	"District data"
+//	@Success		201		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/districts [post]
 func (dc *DistrictController) CreateDistrict(c echo.Context) error {
 	var input service.CreateDistrictInput
 
@@ -106,6 +141,22 @@ func (dc *DistrictController) CreateDistrict(c echo.Context) error {
 	)
 }
 
+// UpdateDistrict godoc
+//
+//	@Summary		Update district
+//	@Description	Update district
+//	@Tags			District
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int							true	"District ID"
+//	@Param			request	body		service.UpdateDistrictInput	true	"District data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/districts/{id} [put]
 func (dc *DistrictController) UpdateDistrict(c echo.Context) error {
 	id, err := strconv.Atoi(
 		c.Param("id"),

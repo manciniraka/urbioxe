@@ -44,10 +44,10 @@ func AnalyzeForecast(forecasts []entity.WeatherForecast) *BMKGAnalysis {
 	}
 
 	current := BMKGPeriod{
-		Weather: forecasts[currentIndex].Weather,
+		Weather:     forecasts[currentIndex].Weather,
 		Temperature: forecasts[currentIndex].Temperature,
-		Humidity: forecasts[currentIndex].Humidity,
-		StartTime: forecasts[currentIndex].ForecastTime,
+		Humidity:    forecasts[currentIndex].Humidity,
+		StartTime:   forecasts[currentIndex].ForecastTime,
 		EndTime: findWeatherEndTime(
 			forecasts,
 			currentIndex,
@@ -62,10 +62,10 @@ func AnalyzeForecast(forecasts []entity.WeatherForecast) *BMKGAnalysis {
 		}
 
 		next := BMKGPeriod{
-			Weather: forecasts[i].Weather,
+			Weather:     forecasts[i].Weather,
 			Temperature: forecasts[i].Temperature,
-			Humidity: forecasts[i].Humidity,
-			StartTime: forecasts[i].ForecastTime,
+			Humidity:    forecasts[i].Humidity,
+			StartTime:   forecasts[i].ForecastTime,
 			EndTime: findWeatherEndTime(
 				forecasts,
 				i,

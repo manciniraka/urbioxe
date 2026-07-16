@@ -20,6 +20,15 @@ func NewNewsController(
 	}
 }
 
+// GetAll godoc
+//
+//	@Summary		Get all news
+//	@Description	Retrieve all regional news
+//	@Tags			News
+//	@Produce		json
+//	@Success		200	{object}	helper.Response
+//	@Failure		500	{object}	helper.ErrorResponse
+//	@Router			/news [get]
 func (nc *NewsController) GetAll(c echo.Context) error {
 	news, err := nc.newsService.GetAll()
 	if err != nil {
@@ -36,6 +45,17 @@ func (nc *NewsController) GetAll(c echo.Context) error {
 	)
 }
 
+// GetByID godoc
+//
+//	@Summary		Get news by ID
+//	@Description	Retrieve news by ID
+//	@Tags			News
+//	@Produce		json
+//	@Param			id	path		int	true	"News ID"
+//	@Success		200	{object}	helper.Response
+//	@Failure		400	{object}	helper.ErrorResponse
+//	@Failure		404	{object}	helper.ErrorResponse
+//	@Router			/news/{id} [get]
 func (nc *NewsController) GetByID(c echo.Context) error {
 	id, err := strconv.ParseInt(
 		c.Param("id"),
@@ -64,6 +84,17 @@ func (nc *NewsController) GetByID(c echo.Context) error {
 	)
 }
 
+// Create godoc
+//
+//	@Summary		Create news
+//	@Description	Create a new news
+//	@Tags			News
+//	@Accept			json
+//	@Produce		json
+//	@Param			news	body		service.CreateNewsInput	true	"News data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Router			/news [post]
 func (nc *NewsController) Create(c echo.Context) error {
 	userID := helper.GetUserID(c)
 
@@ -101,6 +132,19 @@ func (nc *NewsController) Create(c echo.Context) error {
 	)
 }
 
+// Update godoc
+//
+//	@Summary		Update news
+//	@Description	Update an existing news
+//	@Tags			News
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int						true	"News ID"
+//	@Param			news	body		service.UpdateNewsInput	true	"News data"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		404		{object}	helper.ErrorResponse
+//	@Router			/news/{id} [put]
 func (nc *NewsController) Update(c echo.Context) error {
 	id, err := strconv.ParseInt(
 		c.Param("id"),
@@ -148,6 +192,17 @@ func (nc *NewsController) Update(c echo.Context) error {
 	)
 }
 
+// Delete godoc
+//
+//	@Summary		Delete news
+//	@Description	Delete an existing news
+//	@Tags			News
+//	@Produce		json
+//	@Param			id	path		int	true	"News ID"
+//	@Success		200	{object}	helper.Response
+//	@Failure		400	{object}	helper.ErrorResponse
+//	@Failure		404	{object}	helper.ErrorResponse
+//	@Router			/news/{id} [delete]
 func (nc *NewsController) Delete(c echo.Context) error {
 	id, err := strconv.ParseInt(
 		c.Param("id"),

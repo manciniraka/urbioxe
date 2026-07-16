@@ -23,6 +23,18 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
+// Register godoc
+//
+//	@Summary		Register user
+//	@Description	Register a new user account
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		service.RegisterInput	true	"Register data"
+//	@Success		201		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/auth/register [post]
 func (ac *AuthController) Register(c echo.Context) error {
 	var input service.RegisterInput
 
@@ -55,6 +67,19 @@ func (ac *AuthController) Register(c echo.Context) error {
 	)
 }
 
+// Login godoc
+//
+//	@Summary		Login
+//	@Description	Login user
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		service.LoginInput	true	"Login credentials"
+//	@Success		200		{object}	helper.Response
+//	@Failure		400		{object}	helper.ErrorResponse
+//	@Failure		401		{object}	helper.ErrorResponse
+//	@Failure		500		{object}	helper.ErrorResponse
+//	@Router			/auth/login [post]
 func (ac *AuthController) Login(c echo.Context) error {
 	var input service.LoginInput
 

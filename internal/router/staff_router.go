@@ -47,7 +47,7 @@ func RegisterStaffRoutes(
 	)
 
 	staff.POST(
-		"", 
+		"",
 		staffController.CreateStaff,
 		middleware.AuthMiddleware(cfg),
 		middleware.RequireRoles(entity.RoleSuperAdmin),

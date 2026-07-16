@@ -24,7 +24,7 @@ func RegisterBMKGRoutes(
 
 	bmkgClient := externalbmkg.New(
 		externalbmkg.Config{
-			BaseURL: cfg.BMKGBaseURL,
+			BaseURL:          cfg.BMKGBaseURL,
 			ForecastEndpoint: cfg.BMKGForecastEndpoint,
 		},
 	)

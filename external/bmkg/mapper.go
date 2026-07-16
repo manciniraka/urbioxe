@@ -30,9 +30,9 @@ func MapForecastResponse(response ForecastResponse) ([]Forecast, error) {
 					forecasts,
 					Forecast{
 						ForecastTime: forecastTime,
-						Temperature: weather.Temperature,
-						Humidity: weather.Humidity,
-						Weather: weather.Weather,
+						Temperature:  weather.Temperature,
+						Humidity:     weather.Humidity,
+						Weather:      weather.Weather,
 					},
 				)
 			}

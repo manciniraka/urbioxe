@@ -23,8 +23,8 @@ type Location struct {
 }
 
 type Weather struct {
-	LocalDateTime string `json:"local_datetime"`
-	Temperature float64 `json:"t"`
-	Humidity int `json:"hu"`
-	Weather string `json:"weather_desc"`
+	LocalDateTime string  `json:"local_datetime"`
+	Temperature   float64 `json:"t"`
+	Humidity      int     `json:"hu"`
+	Weather       string  `json:"weather_desc"`
 }

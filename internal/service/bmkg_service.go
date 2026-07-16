@@ -37,11 +37,11 @@ func NewBMKGService(
 	userRepo repository.UserRepository,
 ) BMKGService {
 	return &bmkgService{
-		db: db,
-		bmkgClient: bmkgClient,
-		bmkgRepo: bmkgRepo,
+		db:           db,
+		bmkgClient:   bmkgClient,
+		bmkgRepo:     bmkgRepo,
 		districtRepo: districtRepo,
-		userRepo: userRepo,
+		userRepo:     userRepo,
 	}
 }
 
@@ -50,7 +50,6 @@ func (bs *bmkgService) SyncForecasts() (*dto.SyncForecastResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	
 
 	successCount := 0
 	failedCount := 0
@@ -84,11 +83,11 @@ func (bs *bmkgService) SyncForecasts() (*dto.SyncForecastResponse, error) {
 			weatherForecasts = append(
 				weatherForecasts,
 				entity.WeatherForecast{
-					DistrictID: district.ID,
+					DistrictID:   district.ID,
 					ForecastTime: forecast.ForecastTime,
-					Temperature: forecast.Temperature,
-					Humidity: forecast.Humidity,
-					Weather: forecast.Weather,
+					Temperature:  forecast.Temperature,
+					Humidity:     forecast.Humidity,
+					Weather:      forecast.Weather,
 				},
 			)
 		}
@@ -140,8 +139,8 @@ func (bs *bmkgService) SyncForecasts() (*dto.SyncForecastResponse, error) {
 
 	return &dto.SyncForecastResponse{
 		Success: successCount,
-		Failed: failedCount,
-		Total: len(districts),
+		Failed:  failedCount,
+		Total:   len(districts),
 	}, nil
 }
 
@@ -175,10 +174,10 @@ func (bs *bmkgService) GetAllWeather() (*dto.WeatherListResult, error) {
 		weatherList = append(
 			weatherList,
 			dto.WeatherListResponse{
-				District: district.Name,
-				Weather: analysis.Current.Weather,
+				District:    district.Name,
+				Weather:     analysis.Current.Weather,
 				Temperature: analysis.Current.Temperature,
-				Humidity: analysis.Current.Humidity,
+				Humidity:    analysis.Current.Humidity,
 			},
 		)
 	}
@@ -227,10 +226,10 @@ func (bs *bmkgService) GetWeatherDetailsByDistrictID(districtID uint) (*dto.Weat
 		timeline = append(
 			timeline,
 			dto.ForecastTimelineResponse{
-				Time: forecastTime.Format("15:04"),
-				Weather: item.Weather,
+				Time:        forecastTime.Format("15:04"),
+				Weather:     item.Weather,
 				Temperature: item.Temperature,
-				Humidity: item.Humidity,
+				Humidity:    item.Humidity,
 			},
 		)
 	}
@@ -255,26 +254,26 @@ func (bs *bmkgService) GetWeatherDetailsByDistrictID(districtID uint) (*dto.Weat
 			timeline = append(
 				timeline,
 				dto.ForecastTimelineResponse{
-					Time: forecastTime.Format("15:04"),
-					Weather: item.Weather,
+					Time:        forecastTime.Format("15:04"),
+					Weather:     item.Weather,
 					Temperature: item.Temperature,
-					Humidity: item.Humidity,
+					Humidity:    item.Humidity,
 				},
 			)
 
-			if forecastDate == "" {	
+			if forecastDate == "" {
 				forecastDate = forecastTime.Format("Monday, 02 January 2006")
 			}
 		}
 	}
 
 	return &dto.WeatherSummaryResponse{
-		District: district.Name,
+		District:     district.Name,
 		ForecastDate: forecastDate,
 		Current: dto.CurrentWeatherResponse{
-			Weather: analysis.Current.Weather,
+			Weather:     analysis.Current.Weather,
 			Temperature: analysis.Current.Temperature,
-			Humidity: analysis.Current.Humidity,
+			Humidity:    analysis.Current.Humidity,
 			ValidUntil: analysis.Current.EndTime.
 				Format("15:04"),
 		},
