@@ -9,6 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/manciniraka/urbioxe/external/mailjet"
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/service"
 	"github.com/manciniraka/urbioxe/mocks"
 	"github.com/stretchr/testify/assert"
@@ -19,19 +20,21 @@ import (
 
 type StaffServiceTestSuite struct {
 	suite.Suite
-	ctrl          *gomock.Controller
-	mockUserRepo  *mocks.MockUserRepository
-	mockStaffRepo *mocks.MockStaffRepository
-	mailer        *mailjet.Client
-	mockServer    *httptest.Server
-	gormDB        *gorm.DB
-	sqlMock       sqlmock.Sqlmock
+	ctrl               *gomock.Controller
+	mockUserRepo       *mocks.MockUserRepository
+	mockStaffRepo      *mocks.MockStaffRepository
+	mockDepartmentRepo *mocks.MockDepartmentRepository
+	mailer             *mailjet.Client
+	mockServer         *httptest.Server
+	gormDB             *gorm.DB
+	sqlMock            sqlmock.Sqlmock
 }
 
 func (suite *StaffServiceTestSuite) SetupTest() {
 	suite.ctrl = gomock.NewController(suite.T())
 	suite.mockUserRepo = mocks.NewMockUserRepository(suite.ctrl)
 	suite.mockStaffRepo = mocks.NewMockStaffRepository(suite.ctrl)
+	suite.mockDepartmentRepo = mocks.NewMockDepartmentRepository(suite.ctrl)
 
 	suite.mockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -86,12 +89,11 @@ func (suite *StaffServiceTestSuite) TestCreateStaff() {
 		suite.mockUserRepo.EXPECT().FindByEmail(input.Email).Return(nil, gorm.ErrRecordNotFound)
 		suite.mockUserRepo.EXPECT().FindByNIK(input.NIK).Return(nil, gorm.ErrRecordNotFound)
 
-		suite.sqlMock.ExpectQuery(`SELECT \* FROM "departments"`).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "code", "name"}).AddRow(1, "DISHUB", "Dinas Perhubungan"))
+		suite.mockDepartmentRepo.EXPECT().
+			FindByID(input.DepartmentID).
+			Return(&entity.Department{ID: 1, Code: "DISHUB", Name: "Dinas Perhubungan", IsActive: true}, nil)
 
-		suite.mockStaffRepo.EXPECT().
-			GetLastEmployeeSequence(gomock.Any(), gomock.Any()).
-			Return(5, nil)
+		suite.mockStaffRepo.EXPECT().GetLastEmployeeSequence(input.DepartmentID, gomock.Any()).Return(5, nil)
 
 		suite.sqlMock.ExpectBegin()
 		suite.mockUserRepo.EXPECT().RegisterUserTx(gomock.Any(), gomock.Any()).DoAndReturn(func(tx *gorm.DB, u *entity.User) error {
@@ -101,7 +103,7 @@ func (suite *StaffServiceTestSuite) TestCreateStaff() {
 		suite.mockStaffRepo.EXPECT().CreateStaffTx(gomock.Any(), gomock.Any()).Return(nil)
 		suite.sqlMock.ExpectCommit()
 
-		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mailer)
+		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mockDepartmentRepo, suite.mailer)
 		res, err := svc.CreateStaff(input)
 
 		assert.Nil(suite.T(), err)
@@ -110,15 +112,32 @@ func (suite *StaffServiceTestSuite) TestCreateStaff() {
 		assert.Equal(suite.T(), "Budi Officer", res.User.Name)
 	})
 
+	suite.Run("Fail - Department Inactive", func() {
+		suite.SetupTest()
+
+		suite.mockUserRepo.EXPECT().FindByEmail(input.Email).Return(nil, gorm.ErrRecordNotFound)
+		suite.mockUserRepo.EXPECT().FindByNIK(input.NIK).Return(nil, gorm.ErrRecordNotFound)
+
+		suite.mockDepartmentRepo.EXPECT().
+			FindByID(input.DepartmentID).
+			Return(&entity.Department{ID: 1, Code: "DISHUB", Name: "Dinas Perhubungan", IsActive: false}, nil)
+
+		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mockDepartmentRepo, suite.mailer)
+		res, err := svc.CreateStaff(input)
+
+		assert.ErrorIs(suite.T(), err, errs.ErrDepartmentInactive)
+		assert.Nil(suite.T(), res)
+	})
+
 	suite.Run("Fail - Invalid Position", func() {
 		suite.SetupTest()
 		invalidInput := input
 		invalidInput.Position = "INVALID_POSITION"
 
-		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mailer)
+		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mockDepartmentRepo, suite.mailer)
 		res, err := svc.CreateStaff(invalidInput)
 
-		assert.NotNil(suite.T(), err)
+		assert.ErrorIs(suite.T(), err, errs.ErrInvalidStaffPosition)
 		assert.Nil(suite.T(), res)
 	})
 }
@@ -140,7 +159,7 @@ func (suite *StaffServiceTestSuite) TestGetAllStaff() {
 
 		suite.mockStaffRepo.EXPECT().GetAll().Return(expectedData, nil)
 
-		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mailer)
+		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mockDepartmentRepo, suite.mailer)
 		res, err := svc.GetAllStaff()
 
 		assert.Nil(suite.T(), err)
@@ -166,7 +185,7 @@ func (suite *StaffServiceTestSuite) TestGetStaffByID() {
 
 		suite.mockStaffRepo.EXPECT().GetByID(uint(1)).Return(expectedData, nil)
 
-		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mailer)
+		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mockDepartmentRepo, suite.mailer)
 		res, err := svc.GetStaffByID(1)
 
 		assert.Nil(suite.T(), err)
@@ -205,7 +224,7 @@ func (suite *StaffServiceTestSuite) TestUpdateStaff() {
 
 		suite.mockStaffRepo.EXPECT().GetByID(uint(1)).Return(existingStaff, nil)
 
-		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mailer)
+		svc := service.NewStaffService(suite.gormDB, suite.mockStaffRepo, suite.mockUserRepo, suite.mockDepartmentRepo, suite.mailer)
 		res, err := svc.UpdateStaff(1, input)
 
 		assert.Nil(suite.T(), err)

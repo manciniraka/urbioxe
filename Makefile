@@ -19,6 +19,10 @@ mock-news:
 	mockgen -source internal/repository/news_repository.go -destination mocks/news_mock_repo.go
 mock-user:
 	mockgen -source internal/repository/user_repository.go -destination mocks/user_mock_repo.go
+mock-water:
+	mockgen -source internal/repository/water_repository.go -destination mocks/water_mock_repo.go
+mock-meter:
+	mockgen -source internal/repository/meter_reading_repository.go -destination mocks/meter_reading_mock_repo.go
 
 #test
 test-service:
