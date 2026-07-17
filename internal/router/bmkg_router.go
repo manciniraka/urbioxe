@@ -47,18 +47,15 @@ func RegisterBMKGRoutes(
 	bmkg := e.Group("/bmkg")
 
 	bmkg.GET("", bmkgController.GetAllWeather)
-
-	bmkg.GET("/:district_id",
-		bmkgController.GetWeatherDetailsByDistrictID,
-		middleware.AuthMiddleware(cfg),
-	)
-
 	bmkg.GET(
 		"/me",
 		bmkgController.GetMyWeather,
 		middleware.AuthMiddleware(cfg),
 	)
-
+	bmkg.GET("/:district_id",
+		bmkgController.GetWeatherDetailsByDistrictID,
+		middleware.AuthMiddleware(cfg),
+	)
 	bmkg.POST(
 		"/sync",
 		bmkgController.SyncForecasts,

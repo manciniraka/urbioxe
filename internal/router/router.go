@@ -44,4 +44,7 @@ func InitRouter(
 
 	// Weather
 	RegisterBMKGRoutes(e, db, cfg)
+
+	// Water
+	RegisterWaterRoutes(e, db, cfg)
 }
