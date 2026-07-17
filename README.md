@@ -379,8 +379,7 @@ DB_SSLMODE=
 
 JWT_SECRET=
 
-BMKG_API_KEY=
-
+MAILJET_BASE_URL=https://api.mailjet.com
 MAILJET_API_KEY=
 MAILJET_SECRET_KEY=
 MAILJET_SENDER_EMAIL=
@@ -389,6 +388,9 @@ MAILJET_SENDER_NAME=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+
+BMKG_BASE_URL=https://api.bmkg.go.id
+BMKG_FORECAST_ENDPOINT=publik/prakiraan-cuaca
 ```
 
 ---
@@ -501,6 +503,18 @@ go test ./...
 # 👨‍💻 Authors
 
 Developed by **Team Urbioxe**
+
+- **Raka Mancini** — Tech Lead & Backend Engineer  
+  [GitHub](https://github.com/manciniraka)
+
+- **Nunin Farid Zahrotin Ula** — Backend Engineer  
+  [GitHub](https://github.com/nuninnih)
+
+- **R Tio Genta Komara** — Backend Engineer  
+  [GitHub](https://github.com/komacato)
+
+- **Imanuel** — Backend Engineer  
+  [GitHub](https://github.com/imanuelss)
 
 Hacktiv8 Golang Backend Final Project
 
