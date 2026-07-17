@@ -77,7 +77,7 @@
 				
 				<option value="file10">github.com/manciniraka/urbioxe/internal/service/user_service.go (85.0%)</option>
 				
-				<option value="file11">github.com/manciniraka/urbioxe/internal/service/water_service.go (0.0%)</option>
+				<option value="file11">github.com/manciniraka/urbioxe/internal/service/water_service.go (70.6%)</option>
 				
 				</select>
 			</div>
@@ -2519,7 +2519,7 @@ func NewWaterService(
         userRepo repository.UserRepository,
         meterReadingRepo repository.MeterReadingRepository,
     cloudinaryService cloudinary.CloudinaryService,
-) WaterService <span class="cov0" title="0">{
+) WaterService <span class="cov8" title="1">{
         return &amp;waterService{
                 waterRepo: waterRepo,
                 districtRepo: districtRepo,
@@ -2529,7 +2529,7 @@ func NewWaterService(
         }
 }</span>
 
-func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStatusInput) (*dto.WaterStatusResponse, error) <span class="cov0" title="0">{
+func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStatusInput) (*dto.WaterStatusResponse, error) <span class="cov8" title="1">{
         district, err := ws.districtRepo.GetByID(
                 input.DistrictID,
         )
@@ -2537,13 +2537,13 @@ func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStat
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">location, _ := time.LoadLocation("Asia/Jakarta")
+        <span class="cov8" title="1">location, _ := time.LoadLocation("Asia/Jakarta")
 
         var startedAt time.Time
         var estimatedRecoveryAt time.Time
         var estimatedDuration int
 
-        if input.Status != entity.WaterStatusNormal </span><span class="cov0" title="0">{
+        if input.Status != entity.WaterStatusNormal </span><span class="cov8" title="1">{
                 startedAt, err = time.ParseInLocation(
                         "2006-01-02 15:04",
                         input.StartedAt,
@@ -2553,20 +2553,20 @@ func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStat
                         return nil, err
                 }</span>
 
-                <span class="cov0" title="0">now := time.Now().In(location)
+                <span class="cov8" title="1">now := time.Now().In(location)
 
-                if startedAt.Before(now) </span><span class="cov0" title="0">{
+                if startedAt.Before(now) </span><span class="cov8" title="1">{
                         return nil, errs.ErrStartedAtBeforeNow
                 }</span>
 
-                <span class="cov0" title="0">estimatedDuration = input.EstimatedDuration
+                <span class="cov8" title="1">estimatedDuration = input.EstimatedDuration
 
                 estimatedRecoveryAt = startedAt.Add(
                         time.Duration(estimatedDuration) * time.Hour,
                 )</span>
         }
 
-        <span class="cov0" title="0">waterStatus := entity.WaterStatus{
+        <span class="cov8" title="1">waterStatus := entity.WaterStatus{
                 DistrictID:           input.DistrictID,
                 Status:               input.Status,
                 StartedAt:            startedAt,
@@ -2581,7 +2581,7 @@ func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStat
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">response := dto.WaterStatusResponse{
+        <span class="cov8" title="1">response := dto.WaterStatusResponse{
                 District: district.Name,
                 Status: waterStatus.Status,
                 StartedAt: waterStatus.
@@ -2599,26 +2599,26 @@ func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStat
         return &amp;response, nil</span>
 }
 
-func (ws *waterService) GetAllWaterStatus() (*dto.WaterListResult, error) <span class="cov0" title="0">{
+func (ws *waterService) GetAllWaterStatus() (*dto.WaterListResult, error) <span class="cov8" title="1">{
         statuses, err := ws.waterRepo.GetLatestAllWaterStatus()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">location, _ := time.LoadLocation(
+        <span class="cov8" title="1">location, _ := time.LoadLocation(
                 "Asia/Jakarta",
         )
 
         var result dto.WaterListResult
 
-        for _, status := range statuses </span><span class="cov0" title="0">{
+        for _, status := range statuses </span><span class="cov8" title="1">{
 
                 item := dto.WaterListItem{
                         District: status.District.Name,
                         Status:   status.Status,
                 }
 
-                if status.Status != entity.WaterStatusNormal </span><span class="cov0" title="0">{
+                if status.Status != entity.WaterStatusNormal </span><span class="cov8" title="1">{
                         startedAt := status.
                                 StartedAt.
                                 In(location).
@@ -2627,12 +2627,12 @@ func (ws *waterService) GetAllWaterStatus() (*dto.WaterListResult, error) <span 
                         item.StartedAt = &amp;startedAt
                 }</span>
 
-                <span class="cov0" title="0">result.Data = append(
+                <span class="cov8" title="1">result.Data = append(
                         result.Data,
                         item,
                 )
 
-                if result.Metadata.UpdatedAt == "" </span><span class="cov0" title="0">{
+                if result.Metadata.UpdatedAt == "" </span><span class="cov8" title="1">{
                         result.Metadata.UpdatedAt = status.CreatedAt.
                         In(location).
                         Format(
@@ -2641,16 +2641,16 @@ func (ws *waterService) GetAllWaterStatus() (*dto.WaterListResult, error) <span 
                 }</span>
         }
 
-        <span class="cov0" title="0">return &amp;result, nil</span>
+        <span class="cov8" title="1">return &amp;result, nil</span>
 }
 
-func (ws *waterService) GetWaterStatusByDistrictID(districtID uint) (*dto.WaterStatusResponse, error) <span class="cov0" title="0">{
+func (ws *waterService) GetWaterStatusByDistrictID(districtID uint) (*dto.WaterStatusResponse, error) <span class="cov8" title="1">{
         status, err := ws.waterRepo.GetLatestWaterStatusByDistrictID(districtID)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">location, _ := time.LoadLocation(
+        <span class="cov8" title="1">location, _ := time.LoadLocation(
                 "Asia/Jakarta",
         )
 
@@ -2671,34 +2671,34 @@ func (ws *waterService) GetWaterStatusByDistrictID(districtID uint) (*dto.WaterS
         return &amp;response, nil</span>
 }
 
-func (ws *waterService) GetMyWaterStatus(userID uint) (*dto.WaterStatusResponse, error) <span class="cov0" title="0">{
+func (ws *waterService) GetMyWaterStatus(userID uint) (*dto.WaterStatusResponse, error) <span class="cov8" title="1">{
         user, err := ws.userRepo.GetByID(userID)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">if user.HomeDistrictID == nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">if user.HomeDistrictID == nil </span><span class="cov8" title="1">{
                 return nil, errs.ErrDistrictNotFound
         }</span>
 
-        <span class="cov0" title="0">return ws.GetWaterStatusByDistrictID(
+        <span class="cov8" title="1">return ws.GetWaterStatusByDistrictID(
                 *user.HomeDistrictID,
         )</span>
 }
 
-func (ws *waterService) GetWaterStatusHistories() ([]dto.WaterHistoryResponse,        error) <span class="cov0" title="0">{
+func (ws *waterService) GetWaterStatusHistories() ([]dto.WaterHistoryResponse,        error) <span class="cov8" title="1">{
         histories, err := ws.waterRepo.GetWaterStatusHistories()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">location, _ := time.LoadLocation(
+        <span class="cov8" title="1">location, _ := time.LoadLocation(
                 "Asia/Jakarta",
         )
 
         var responses []dto.WaterHistoryResponse
 
-        for _, history := range histories </span><span class="cov0" title="0">{
+        for _, history := range histories </span><span class="cov8" title="1">{
                 response := dto.WaterHistoryResponse{
                         District: history.District.Name,
                         Status: history.Status,
@@ -2710,7 +2710,7 @@ func (ws *waterService) GetWaterStatusHistories() ([]dto.WaterHistoryResponse,  
                                 Format("02 Jan 2006 15:04 WIB"),
                 }
 
-                if history.Status != entity.WaterStatusNormal </span><span class="cov0" title="0">{
+                if history.Status != entity.WaterStatusNormal </span><span class="cov8" title="1">{
                         startedAt := history.
                                 StartedAt.
                                 In(location).
@@ -2725,18 +2725,18 @@ func (ws *waterService) GetWaterStatusHistories() ([]dto.WaterHistoryResponse,  
                         response.EstimatedDuration = &amp;estimatedDuration
                 }</span>
 
-                <span class="cov0" title="0">responses = append(
+                <span class="cov8" title="1">responses = append(
                         responses,
                         response,
                 )</span>
         }
 
-        <span class="cov0" title="0">return responses, nil</span>
+        <span class="cov8" title="1">return responses, nil</span>
 }
 
-func (ws *waterService) SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error) <span class="cov0" title="0">{
+func (ws *waterService) SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error) <span class="cov8" title="1">{
         tariff, err := config.GetWaterTariff(input.TariffGroup)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
@@ -2819,17 +2819,17 @@ func (ws *waterService) CreateMeterReading(
         userID uint,
         input dto.CreateMeterReadingInput,
         fileHeader *multipart.FileHeader,
-) (*dto.MeterReadingResponse, error) <span class="cov0" title="0">{
+) (*dto.MeterReadingResponse, error) <span class="cov8" title="1">{
         location, _ := time.LoadLocation(
                 "Asia/Jakarta",
         )
 
         photoURL, err := ws.cloudinaryService.UploadImage(fileHeader)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">meterReading := entity.MeterReading{
+        <span class="cov8" title="1">meterReading := entity.MeterReading{
                 UserID: userID,
                 CustomerNumber: input.CustomerNumber,
                 CurrentReading: input.CurrentReading,
@@ -2842,7 +2842,7 @@ func (ws *waterService) CreateMeterReading(
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">response := dto.MeterReadingResponse{
+        <span class="cov8" title="1">response := dto.MeterReadingResponse{
                 CustomerNumber: meterReading.CustomerNumber,
                 CurrentReading: meterReading.CurrentReading,
                 PhotoURL: meterReading.PhotoURL,
@@ -2856,7 +2856,7 @@ func (ws *waterService) CreateMeterReading(
         return &amp;response, nil</span>
 }
 
-func (ws *waterService) GetMyMeterReadings(userID uint) ([]dto.MeterReadingHistoryResponse, error) <span class="cov0" title="0">{
+func (ws *waterService) GetMyMeterReadings(userID uint) ([]dto.MeterReadingHistoryResponse, error) <span class="cov8" title="1">{
         location, _ := time.LoadLocation(
                 "Asia/Jakarta",
         )
@@ -2866,9 +2866,9 @@ func (ws *waterService) GetMyMeterReadings(userID uint) ([]dto.MeterReadingHisto
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
+        <span class="cov8" title="1">response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
 
-        for _, meterReading := range meterReadings </span><span class="cov0" title="0">{
+        for _, meterReading := range meterReadings </span><span class="cov8" title="1">{
                 response = append(response, dto.MeterReadingHistoryResponse{
                         ID:             meterReading.ID,
                         CustomerNumber: meterReading.CustomerNumber,
@@ -2881,10 +2881,10 @@ func (ws *waterService) GetMyMeterReadings(userID uint) ([]dto.MeterReadingHisto
                 })
         }</span>
 
-        <span class="cov0" title="0">return response, nil</span>
+        <span class="cov8" title="1">return response, nil</span>
 }
 
-func (ws *waterService) GetAllMeterReadings(month *int, year *int) ([]dto.MeterReadingHistoryResponse, error) <span class="cov0" title="0">{
+func (ws *waterService) GetAllMeterReadings(month *int, year *int) ([]dto.MeterReadingHistoryResponse, error) <span class="cov8" title="1">{
         location, _ := time.LoadLocation(
                 "Asia/Jakarta",
         )
@@ -2894,9 +2894,9 @@ func (ws *waterService) GetAllMeterReadings(month *int, year *int) ([]dto.MeterR
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
+        <span class="cov8" title="1">response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
 
-        for _, meterReading := range meterReadings </span><span class="cov0" title="0">{
+        for _, meterReading := range meterReadings </span><span class="cov8" title="1">{
                 response = append(response, dto.MeterReadingHistoryResponse{
                         ID:             meterReading.ID,
                         CustomerNumber: meterReading.CustomerNumber,
@@ -2909,7 +2909,7 @@ func (ws *waterService) GetAllMeterReadings(month *int, year *int) ([]dto.MeterR
                 })
         }</span>
 
-        <span class="cov0" title="0">return response, nil</span>
+        <span class="cov8" title="1">return response, nil</span>
 }</pre>
 		
 		</div>
