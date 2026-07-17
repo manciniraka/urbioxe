@@ -22,6 +22,7 @@ func RegisterStaffRoutes(
 
 	userRepo := repository.NewUserRepository(db)
 	staffRepo := repository.NewStaffRepository(db)
+	departmentRepo := repository.NewDepartmentRepository(db)
 
 	mailer := mailjet.New(
 		mailjet.Config{
@@ -37,6 +38,7 @@ func RegisterStaffRoutes(
 		db,
 		staffRepo,
 		userRepo,
+		departmentRepo,
 		mailer,
 	)
 

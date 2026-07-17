@@ -17,7 +17,8 @@ func RegisterUserRoutes(
 ) {
 
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
+	districtRepo := repository.NewDistrictRepository(db)
+	userService := service.NewUserService(userRepo, districtRepo)
 	userController := controller.NewUserController(userService)
 
 	users := e.Group(

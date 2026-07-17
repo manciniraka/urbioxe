@@ -121,6 +121,7 @@ func (cs *categoryService) UpdateCategory(id uint, role string, input UpdateCate
 		return nil, errs.ErrCategoryAlreadyExists
 	}
 
+	category.Department = nil
 	category.DepartmentID = input.DepartmentID
 	category.Name = input.Name
 	category.Description = input.Description
@@ -130,7 +131,12 @@ func (cs *categoryService) UpdateCategory(id uint, role string, input UpdateCate
 		return nil, err
 	}
 
-	return category, nil
+	updatedCategory, err := cs.repo.FindByID(category.ID)
+	if err != nil {
+	    return nil, err
+	}
+
+	return updatedCategory, nil
 }
 
 func (cs *categoryService) ToggleCategoryStatus(id uint, role string, input ToggleCategoryStatusInput) error {

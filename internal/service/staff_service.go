@@ -26,6 +26,7 @@ type staffService struct {
 	db        *gorm.DB
 	staffRepo repository.StaffRepository
 	userRepo  repository.UserRepository
+	departmentRepo repository.DepartmentRepository
 	mailer    *mailjet.Client
 }
 
@@ -33,12 +34,14 @@ func NewStaffService(
 	db *gorm.DB,
 	staffRepo repository.StaffRepository,
 	userRepo repository.UserRepository,
+	departmentRepo repository.DepartmentRepository,
 	mailer *mailjet.Client,
 ) StaffService {
 	return &staffService{
 		db:        db,
 		staffRepo: staffRepo,
 		userRepo:  userRepo,
+		departmentRepo: departmentRepo,
 		mailer:    mailer,
 	}
 }
@@ -118,23 +121,17 @@ func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfil
 		return nil, err
 	}
 
-	var department entity.Department
-
-	err = ss.db.
-		First( // TODO(INTEGRATION): Replace direct query with DepartmentRepository after Department module has been merged.
-			&department,
-			input.DepartmentID,
-		).Error
-
+	department, err := ss.departmentRepo.FindByID(input.DepartmentID)
 	if err != nil {
-		if errors.Is(
-			err,
-			gorm.ErrRecordNotFound,
-		) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errs.ErrDepartmentNotFound
 		}
 
 		return nil, err
+	}
+
+	if !department.IsActive {
+		return nil, errs.ErrDepartmentInactive
 	}
 
 	joinDate, err := time.Parse(
@@ -234,7 +231,7 @@ func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfil
 	user.Password = ""
 
 	staff.User = &user
-	staff.Department = &department
+	staff.Department = department
 
 	return &staff, nil
 }

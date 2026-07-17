@@ -297,7 +297,7 @@ func (bs *bmkgService) GetMyWeather(userID uint) (*dto.WeatherSummaryResponse, e
 	}
 
 	if user.HomeDistrictID == nil {
-		return nil, errs.ErrDistrictNotFound
+		return nil, errs.ErrHomeDistrictNotSet
 	}
 
 	return bs.GetWeatherDetailsByDistrictID(*user.HomeDistrictID)
