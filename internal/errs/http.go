@@ -23,7 +23,8 @@ func StatusCode(err error) int {
 		errors.Is(err, ErrReportAlreadyRejected),
 		errors.Is(err, ErrReportAlreadyInProcess),
 		errors.Is(err, ErrCategoryAlreadyExists),
-		errors.Is(err, ErrStartedAtBeforeNow):
+		errors.Is(err, ErrStartedAtBeforeNow),
+		errors.Is(err, ErrRequireYearForMonthQuery):
 		return http.StatusBadRequest
 
 	// 401 Unauthorized

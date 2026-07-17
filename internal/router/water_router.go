@@ -76,4 +76,21 @@ func RegisterWaterRoutes(
 		waterController.CreateMeterReading,
 		middleware.AuthMiddleware(cfg),
 	)
+
+	water.GET(
+		"/meter-readings/me",
+		waterController.GetMyMeterReadings,
+		middleware.AuthMiddleware(cfg),
+	)
+
+	water.GET(
+		"/meter-readings",
+		waterController.GetAllMeterReadings,
+		middleware.AuthMiddleware(cfg),
+		middleware.RequireRoles(
+			entity.RoleOfficer,
+			entity.RoleDepartmentAdmin,
+			entity.RoleSuperAdmin,
+		),
+	)
 }

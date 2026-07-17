@@ -44,6 +44,12 @@ CREATE TYPE news_scope AS ENUM (
     'district'
 );
 
+CREATE TYPE meter_reading_status AS ENUM (
+    'Pending',
+    'Approved',
+    'Rejected'
+);
+
 CREATE TABLE districts (
     id BIGSERIAL PRIMARY KEY,
     bmkg_adm4_code VARCHAR(20) UNIQUE NOT NULL,
@@ -201,6 +207,17 @@ CREATE TABLE water_statuses (
     estimated_recovery_at TIMESTAMP NOT NULL,
     reason TEXT,
     created_by BIGINT NOT NULL REFERENCES users(id),
+
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE meter_readings (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    customer_number VARCHAR(30) NOT NULL,
+    current_reading INTEGER NOT NULL,
+    photo_url TEXT NOT NULL,
+    status meter_reading_status NOT NULL DEFAULT 'Pending',
 
     created_at TIMESTAMP DEFAULT NOW()
 );

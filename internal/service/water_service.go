@@ -26,6 +26,8 @@ type WaterService interface {
 		input dto.CreateMeterReadingInput,
 		fileHeader *multipart.FileHeader,
 	) (*dto.MeterReadingResponse, error)
+	GetMyMeterReadings(userID uint) ([]dto.MeterReadingHistoryResponse, error)
+	GetAllMeterReadings(month *int, year *int) ([]dto.MeterReadingHistoryResponse, error)
 }
 
 
@@ -349,9 +351,7 @@ func (ws *waterService) CreateMeterReading(
 		"Asia/Jakarta",
 	)
 
-	photoURL, err := ws.cloudinaryService.UploadImage(
-		fileHeader,
-	)
+	photoURL, err := ws.cloudinaryService.UploadImage(fileHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -364,9 +364,7 @@ func (ws *waterService) CreateMeterReading(
 		Status: entity.MeterReadingPending,
 	}
 
-	err = ws.meterReadingRepo.CreateMeterReading(
-		&meterReading,
-	)
+	err = ws.meterReadingRepo.CreateMeterReading(&meterReading)
 	if err != nil {
 		return nil, err
 	}
@@ -383,4 +381,60 @@ func (ws *waterService) CreateMeterReading(
 	}
 
 	return &response, nil
+}
+
+func (ws *waterService) GetMyMeterReadings(userID uint) ([]dto.MeterReadingHistoryResponse, error) {
+	location, _ := time.LoadLocation(
+		"Asia/Jakarta",
+	)
+	
+	meterReadings, err := ws.meterReadingRepo.GetMyMeterReadings(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
+
+	for _, meterReading := range meterReadings {
+		response = append(response, dto.MeterReadingHistoryResponse{
+			ID:             meterReading.ID,
+			CustomerNumber: meterReading.CustomerNumber,
+			CurrentReading: meterReading.CurrentReading,
+			PhotoURL:       meterReading.PhotoURL,
+			Status:         meterReading.Status,
+			SubmittedAt: meterReading.CreatedAt.
+				In(location).
+				Format("02 Jan 2006 15:04 WIB"),
+		})
+	}
+
+	return response, nil
+}
+
+func (ws *waterService) GetAllMeterReadings(month *int, year *int) ([]dto.MeterReadingHistoryResponse, error) {
+	location, _ := time.LoadLocation(
+		"Asia/Jakarta",
+	)
+	
+	meterReadings, err := ws.meterReadingRepo.GetAllMeterReadings(month, year)
+	if err != nil {
+		return nil, err
+	}
+
+	response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
+
+	for _, meterReading := range meterReadings {
+		response = append(response, dto.MeterReadingHistoryResponse{
+			ID:             meterReading.ID,
+			CustomerNumber: meterReading.CustomerNumber,
+			CurrentReading: meterReading.CurrentReading,
+			PhotoURL:       meterReading.PhotoURL,
+			Status:         meterReading.Status,
+			SubmittedAt: meterReading.CreatedAt.
+				In(location).
+				Format("02 Jan 2006 15:04 WIB"),
+		})
+	}
+
+	return response, nil
 }

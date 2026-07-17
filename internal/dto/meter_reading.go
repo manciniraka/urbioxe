@@ -21,3 +21,8 @@ type MeterReadingHistoryResponse struct {
 	Status         string `json:"status"`
 	SubmittedAt    string `json:"submitted_at"`
 }
+
+type GetMeterReadingsQuery struct {
+	Month *int `query:"month"`
+	Year  *int `query:"year"`
+}

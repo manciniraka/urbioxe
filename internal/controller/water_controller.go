@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/manciniraka/urbioxe/internal/dto"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/service"
 )
@@ -214,6 +215,56 @@ func (wc *WaterController) CreateMeterReading(c echo.Context) error {
 	return helper.Created(
 		c,
 		"meter reading submitted successfully",
+		response,
+	)
+}
+
+func (wc *WaterController) GetMyMeterReadings(c echo.Context) error {
+	userID := helper.GetUserID(c)
+
+	response, err := wc.waterService.GetMyMeterReadings(userID)
+	if err != nil {
+		return helper.HandleError(
+			c,
+			err,
+		)
+	}
+
+	return helper.Success(
+		c,
+		"meter reading history retrieved successfully",
+		response,
+	)
+}
+
+func (wc *WaterController) GetAllMeterReadings(c echo.Context) error {
+	var query dto.GetMeterReadingsQuery
+
+	if err := c.Bind(&query); err != nil {
+		return helper.HandleError(
+			c, 
+			err,
+		)
+	}
+
+	if query.Month != nil && query.Year == nil {
+		return errs.ErrRequireYearForMonthQuery
+	}
+
+	response, err := wc.waterService.GetAllMeterReadings(
+		query.Month,
+		query.Year,
+	)
+	if err != nil {
+		return helper.HandleError(
+			c, 
+			err,
+		)
+	}
+
+	return helper.Success(
+		c,
+		"meter readings retrieved successfully",
 		response,
 	)
 }
