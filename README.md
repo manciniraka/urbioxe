@@ -125,9 +125,8 @@ This project was developed as a Final Project for the Hacktiv8 Golang Backend Bo
 ## 💦 Water Meter Reading
 
 - Submit Water Meter Reading
-- Upload Meter Photo
+- Upload Water Meter Evidence
 - View Water Meter Reading History
-- Validate Meter Reading
 
 ---
 
@@ -540,9 +539,9 @@ go test ./...
 
 - Push Notification
 - Redis Caching
-- GIS / Interactive City Map
 - Smart Water Consumption Analytics
 - Online Water Bill Payment Integration
+- GIS / Interactive City Map
 - WebSocket Real-Time Notification
 - AI Report Classification
 - Dashboard Analytics
