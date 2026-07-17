@@ -14,7 +14,7 @@ Designed to improve communication between citizens and local government through 
 
 Urbioxe is a Smart City backend platform that provides centralized digital public services for citizens, government officers, and administrators.
 
-The platform enables citizens to submit public reports, access emergency contacts, retrieve district weather information, and stay informed through government news. Government officers can manage reports, departments, districts, categories, emergency contacts, and staff through a secure Role-Based Access Control (RBAC) system.
+The platform enables citizens to submit public reports, access emergency contacts, retrieve district weather information, monitor water service status, submit water meter readings, simulate water bills, and stay informed through official government news. Government officers can manage reports, departments, districts, categories, emergency contacts, and staff through a secure Role-Based Access Control (RBAC) system.
 
 This project was developed as a Final Project for the Hacktiv8 Golang Backend Bootcamp while applying production-ready backend development practices including layered architecture, repository pattern, dependency injection, JWT authentication, third-party integrations, Docker, and unit testing.
 
@@ -25,6 +25,7 @@ This project was developed as a Final Project for the Hacktiv8 Golang Backend Bo
 ## Highlights
 
 - 🏙️ Smart City Services Management Platform
+- 💧 Smart Water Management Modules
 - 🔐 JWT Authentication & Role-Based Access Control (RBAC)
 - 🏗️ Layered Architecture with Repository Pattern
 - 🌤️ BMKG Weather API Integration
@@ -113,6 +114,31 @@ This project was developed as a Final Project for the Hacktiv8 Golang Backend Bo
 
 ---
 
+## 💧 Water Status
+
+- Get Water Status by District
+- Get Water Status by Current User Location
+- Synchronize Water Status Data
+
+---
+
+## 💦 Water Meter Reading
+
+- Submit Water Meter Reading
+- Upload Meter Photo
+- View Water Meter Reading History
+- Validate Meter Reading
+
+---
+
+## 🧾 Water Bill Simulation
+
+- Simulate Water Bill
+- Calculate Estimated Water Consumption
+- View Estimated Monthly Water Charges
+
+---
+
 ## 📰 News
 
 - Create News
@@ -145,20 +171,21 @@ This project was developed as a Final Project for the Hacktiv8 Golang Backend Bo
 
 # 🚀 Tech Stack
 
-| Technology     | Description          |
-| -------------- | -------------------- |
-| Golang         | Programming Language |
-| Echo Framework | HTTP Framework       |
-| PostgreSQL     | Relational Database  |
-| GORM           | ORM                  |
-| JWT            | Authentication       |
-| Docker         | Containerization     |
-| Mailjet        | Email Notification   |
-| Cloudinary     | Image Storage        |
-| BMKG API       | Weather Information  |
-| GoMock         | Unit Testing         |
-| Testify        | Assertions           |
-| Postman        | API Testing          |
+| Technology         | Description                        |
+| ------------------ | ---------------------------------- |
+| Golang             | Programming Language               |
+| Echo Framework     | HTTP Framework                     |
+| PostgreSQL         | Relational Database                |
+| GORM               | ORM                                |
+| JWT                | Authentication                     |
+| Docker             | Containerization                   |
+| Mailjet            | Email Notification                 |
+| Cloudinary         | Image Storage                      |
+| BMKG API           | Weather Information                |
+| Smart Water Module | Water Monitoring & Bill Simulation |
+| GoMock             | Unit Testing                       |
+| Testify            | Assertions                         |
+| Postman            | API Testing                        |
 
 ---
 
@@ -309,6 +336,28 @@ API->>BMKG: Request Weather
 BMKG-->>API: Weather Information
 
 API-->>User: Weather Response
+```
+
+---
+
+## Water Bill Simulation Flow
+
+```mermaid
+sequenceDiagram
+
+participant Citizen
+participant API
+participant Service
+
+Citizen->>API: Submit Current Meter Reading
+
+API->>Service: Calculate Water Consumption
+
+Service->>Service: Apply Tariff Rules
+
+Service-->>API: Estimated Water Bill
+
+API-->>Citizen: Bill Simulation Result
 ```
 
 ---
@@ -492,6 +541,8 @@ go test ./...
 - Push Notification
 - Redis Caching
 - GIS / Interactive City Map
+- Smart Water Consumption Analytics
+- Online Water Bill Payment Integration
 - WebSocket Real-Time Notification
 - AI Report Classification
 - Dashboard Analytics
