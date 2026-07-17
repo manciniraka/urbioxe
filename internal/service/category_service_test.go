@@ -5,6 +5,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/manciniraka/urbioxe/internal/entity"
+	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/service"
 	"github.com/manciniraka/urbioxe/mocks"
 	"github.com/stretchr/testify/assert"
@@ -125,24 +126,89 @@ func (suite *CategoryServiceTestSuite) TestUpdateCategory() {
 		Description:  "Menghalangi jalan raya",
 	}
 
-	suite.Run("Success - Updated", func() {
-		suite.SetupTest()
-		existingData := &entity.Category{ID: categoryID, Name: "Pohon Rusak", DepartmentID: 1}
+	tests := []struct {
+		name     string
+		role     string
+		mockFn   func()
+		verifyFn func(res *entity.Category, err error)
+	}{
+		{
+			name: "Success - Updated fully and refetched",
+			role: "super_admin",
+			mockFn: func() {
+				existingData := &entity.Category{ID: categoryID, Name: "Pohon Rusak", DepartmentID: 1}
+				suite.mockCategory.EXPECT().FindByID(categoryID).Return(existingData, nil)
 
-		suite.mockCategory.EXPECT().FindByID(categoryID).Return(existingData, nil)
+				suite.mockCategory.EXPECT().
+					CheckNameExistsInDepartment(input.DepartmentID, input.Name, categoryID).
+					Return(false, nil)
 
-		suite.mockCategory.EXPECT().
-			CheckNameExistsInDepartment(input.DepartmentID, input.Name, categoryID).
-			Return(false, nil)
+				suite.mockCategory.EXPECT().Update(gomock.Any()).Return(nil)
 
-		suite.mockCategory.EXPECT().Update(gomock.Any()).Return(nil)
+				updatedData := &entity.Category{
+					ID:           categoryID,
+					Name:         input.Name,
+					Description:  input.Description,
+					DepartmentID: input.DepartmentID,
+				}
+				suite.mockCategory.EXPECT().FindByID(categoryID).Return(updatedData, nil)
+			},
+			verifyFn: func(res *entity.Category, err error) {
+				assert.Nil(suite.T(), err)
+				assert.NotNil(suite.T(), res)
+				assert.Equal(suite.T(), "Pohon Tumbang", res.Name)
+				assert.Equal(suite.T(), uint(3), res.DepartmentID)
+			},
+		},
+		{
+			name:   "Fail - Forbidden Role",
+			role:   "citizen",
+			mockFn: func() {},
+			verifyFn: func(res *entity.Category, err error) {
+				assert.ErrorIs(suite.T(), err, errs.ErrForbidden)
+				assert.Nil(suite.T(), res)
+			},
+		},
+		{
+			name: "Fail - Category Not Found",
+			role: "department_admin",
+			mockFn: func() {
+				suite.mockCategory.EXPECT().FindByID(categoryID).Return(nil, gorm.ErrRecordNotFound)
+			},
+			verifyFn: func(res *entity.Category, err error) {
+				assert.ErrorIs(suite.T(), err, errs.ErrCategoryNotFound)
+				assert.Nil(suite.T(), res)
+			},
+		},
+		{
+			name: "Fail - Name Already Exists In Department",
+			role: "department_admin",
+			mockFn: func() {
+				existingData := &entity.Category{ID: categoryID, Name: "Pohon Rusak", DepartmentID: 1}
+				suite.mockCategory.EXPECT().FindByID(categoryID).Return(existingData, nil)
 
-		svc := service.NewCategoryService(suite.mockCategory)
-		res, err := svc.UpdateCategory(categoryID, "super_admin", input)
+				suite.mockCategory.EXPECT().
+					CheckNameExistsInDepartment(input.DepartmentID, input.Name, categoryID).
+					Return(true, nil)
+			},
+			verifyFn: func(res *entity.Category, err error) {
+				assert.ErrorIs(suite.T(), err, errs.ErrCategoryAlreadyExists)
+				assert.Nil(suite.T(), res)
+			},
+		},
+	}
 
-		assert.Nil(suite.T(), err)
-		assert.Equal(suite.T(), "Pohon Tumbang", res.Name)
-	})
+	for _, tc := range tests {
+		suite.Run(tc.name, func() {
+			suite.SetupTest()
+			tc.mockFn()
+
+			svc := service.NewCategoryService(suite.mockCategory)
+			res, err := svc.UpdateCategory(categoryID, tc.role, input)
+
+			tc.verifyFn(res, err)
+		})
+	}
 }
 
 func (suite *CategoryServiceTestSuite) TestToggleCategoryStatus() {
