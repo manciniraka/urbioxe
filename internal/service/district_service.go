@@ -29,6 +29,7 @@ func NewDistrictService(
 }
 
 type CreateDistrictInput struct {
+	BMKGADM4Code string `json:"bmkg_adm4_code" validate:"required"`
 	Name string `json:"name" validate:"required"`
 }
 
@@ -59,6 +60,7 @@ func (ds *districtService) CreateDistrict(input CreateDistrictInput) (*entity.Di
 	}
 
 	district := entity.District{
+    	BMKGADM4Code: input.BMKGADM4Code,
 		Name: input.Name,
 	}
 

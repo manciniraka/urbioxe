@@ -1,10 +1,13 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/manciniraka/urbioxe/internal/entity"
 	"github.com/manciniraka/urbioxe/internal/errs"
 	"github.com/manciniraka/urbioxe/internal/helper"
 	"github.com/manciniraka/urbioxe/internal/repository"
+	"gorm.io/gorm"
 )
 
 type UserService interface {
@@ -15,13 +18,16 @@ type UserService interface {
 
 type userService struct {
 	userRepo repository.UserRepository
+	districtRepo repository.DistrictRepository
 }
 
 func NewUserService(
 	userRepo repository.UserRepository,
+	districtRepo repository.DistrictRepository,
 ) UserService {
 	return &userService{
 		userRepo: userRepo,
+		districtRepo: districtRepo,
 	}
 }
 
@@ -53,12 +59,19 @@ func (s *userService) UpdateProfile(userID uint, input UpdateProfileInput) (*ent
 		return nil, errs.ErrUserNotFound
 	}
 
-	// TODO:
-	// Validate HomeDistrictID once District module is implemented.
-	// Business Rule:
-	// - HomeDistrictID must reference an active district.
-	// - Return errs.ErrDistrictNotFound if district does not exist.
-	// - Return errs.ErrDistrictInactive if district is inactive.
+	if input.HomeDistrictID != nil {
+		district, err := s.districtRepo.GetByID(*input.HomeDistrictID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errs.ErrDistrictNotFound
+			}
+			return nil, err
+		}
+	
+		if !district.IsActive {
+			return nil, errs.ErrDistrictInactive
+		}
+	}
 
 	user.Name = input.Name
 	user.PhoneNumber = input.PhoneNumber
