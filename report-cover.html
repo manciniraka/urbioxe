@@ -1,0 +1,2944 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/manciniraka/urbioxe/internal/service/auth_service.go (78.1%)</option>
+				
+				<option value="file1">github.com/manciniraka/urbioxe/internal/service/bmkg_analyzer.go (0.0%)</option>
+				
+				<option value="file2">github.com/manciniraka/urbioxe/internal/service/bmkg_service.go (0.0%)</option>
+				
+				<option value="file3">github.com/manciniraka/urbioxe/internal/service/category_service.go (74.6%)</option>
+				
+				<option value="file4">github.com/manciniraka/urbioxe/internal/service/department_service.go (67.3%)</option>
+				
+				<option value="file5">github.com/manciniraka/urbioxe/internal/service/district_service.go (78.9%)</option>
+				
+				<option value="file6">github.com/manciniraka/urbioxe/internal/service/emergency_service.go (85.2%)</option>
+				
+				<option value="file7">github.com/manciniraka/urbioxe/internal/service/news_service.go (88.9%)</option>
+				
+				<option value="file8">github.com/manciniraka/urbioxe/internal/service/report_service.go (71.7%)</option>
+				
+				<option value="file9">github.com/manciniraka/urbioxe/internal/service/staff_service.go (70.0%)</option>
+				
+				<option value="file10">github.com/manciniraka/urbioxe/internal/service/user_service.go (85.0%)</option>
+				
+				<option value="file11">github.com/manciniraka/urbioxe/internal/service/water_service.go (70.6%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package service
+
+import (
+        "errors"
+
+        "github.com/manciniraka/urbioxe/external/mailjet"
+        "github.com/manciniraka/urbioxe/internal/config"
+        "github.com/manciniraka/urbioxe/internal/constant"
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/helper"
+        "github.com/manciniraka/urbioxe/internal/logger"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type AuthService interface {
+        Register(input RegisterInput) (*entity.User, error)
+        Login(input LoginInput) (string, error)
+}
+
+type authService struct {
+        userRepo repository.UserRepository
+        cfg      *config.Config
+        mailer   *mailjet.Client
+}
+
+func NewAuthService(
+        userRepo repository.UserRepository,
+        cfg *config.Config,
+        mailer *mailjet.Client,
+) AuthService <span class="cov8" title="1">{
+        return &amp;authService{
+                userRepo: userRepo,
+                cfg:      cfg,
+                mailer:   mailer,
+        }
+}</span>
+
+type RegisterInput struct {
+        NIK            string `json:"nik" validate:"required,len=16,numeric"`
+        HomeDistrictID *uint  `json:"home_district_id"`
+        Name           string `json:"name" validate:"required,min=3,max=100"`
+        Email          string `json:"email" validate:"required,email"`
+        Password       string `json:"password" validate:"required,min=8"`
+        PhoneNumber    string `json:"phone_number" validate:"required,min=9,max=15,numeric"`
+}
+
+type LoginInput struct {
+        Email    string `json:"email" validate:"required,email"`
+        Password string `json:"password" validate:"required,min=8"`
+}
+
+func (s *authService) Register(input RegisterInput) (*entity.User, error) <span class="cov8" title="1">{
+        existingUser, err := s.userRepo.FindByEmail(input.Email)
+        if err == nil &amp;&amp; existingUser != nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrEmailRegistered
+        }</span>
+        <span class="cov8" title="1">if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">existingUser, err = s.userRepo.FindByNIK(input.NIK)
+        if err == nil &amp;&amp; existingUser != nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrNIKRegistered
+        }</span>
+        <span class="cov8" title="1">if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">hashedPassword, err := helper.HashPassword(input.Password)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">user := entity.User{
+                HomeDistrictID: input.HomeDistrictID,
+                NIK:            input.NIK,
+                Name:           input.Name,
+                Email:          input.Email,
+                Password:       hashedPassword,
+                PhoneNumber:    input.PhoneNumber,
+                Role:           entity.RoleCitizen,
+        }
+
+        err = s.userRepo.Register(&amp;user)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if err := s.mailer.SendWelcomeEmail(
+                user.Name,
+                user.Email,
+        ); err != nil </span><span class="cov0" title="0">{
+                logger.Log.Error(
+                        "failed to send welcome email",
+                        "tag", constant.LogTagMailjet,
+                        "email", user.Email,
+                        "error", err,
+                )
+        }</span>
+
+        <span class="cov8" title="1">user.Password = ""
+
+        return &amp;user, nil</span>
+}
+
+// Validates user credentials to login
+func (s *authService) Login(input LoginInput) (string, error) <span class="cov8" title="1">{
+        user, err := s.userRepo.FindByEmail(
+                input.Email,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                return "", errs.ErrInvalidCredential
+        }</span>
+
+        <span class="cov8" title="1">err = helper.ComparePassword(
+                user.Password,
+                input.Password,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return "", errs.ErrInvalidCredential
+        }</span>
+
+        <span class="cov8" title="1">token, err := helper.GenerateJWT(
+                user.ID,
+                string(user.Role),
+                s.cfg.JWTSecret,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+
+        <span class="cov8" title="1">return token, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package service
+
+import (
+        "time"
+
+        "github.com/manciniraka/urbioxe/internal/entity"
+)
+
+type BMKGPeriod struct {
+        Weather     string
+        Temperature float64
+        Humidity    int
+
+        StartTime time.Time
+        EndTime   time.Time
+}
+
+type BMKGAnalysis struct {
+        Current  BMKGPeriod
+        Upcoming *BMKGPeriod
+}
+
+func AnalyzeForecast(forecasts []entity.WeatherForecast) *BMKGAnalysis <span class="cov0" title="0">{
+        if len(forecasts) == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now()
+
+        currentIndex := 0
+
+        for i, forecast := range forecasts </span><span class="cov0" title="0">{
+                forecastTime := forecast.ForecastTime
+
+                if forecastTime.After(now) </span><span class="cov0" title="0">{
+                        if i &gt; 0 </span><span class="cov0" title="0">{
+                                currentIndex = i - 1
+                        }</span>
+
+                        <span class="cov0" title="0">break</span>
+                }
+
+                <span class="cov0" title="0">currentIndex = i</span>
+        }
+
+        <span class="cov0" title="0">current := BMKGPeriod{
+                Weather:     forecasts[currentIndex].Weather,
+                Temperature: forecasts[currentIndex].Temperature,
+                Humidity:    forecasts[currentIndex].Humidity,
+                StartTime:   forecasts[currentIndex].ForecastTime,
+                EndTime: findWeatherEndTime(
+                        forecasts,
+                        currentIndex,
+                ),
+        }
+
+        var upcoming *BMKGPeriod
+
+        for i := currentIndex + 1; i &lt; len(forecasts); i++ </span><span class="cov0" title="0">{
+                if forecasts[i].Weather == current.Weather </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">next := BMKGPeriod{
+                        Weather:     forecasts[i].Weather,
+                        Temperature: forecasts[i].Temperature,
+                        Humidity:    forecasts[i].Humidity,
+                        StartTime:   forecasts[i].ForecastTime,
+                        EndTime: findWeatherEndTime(
+                                forecasts,
+                                i,
+                        ),
+                }
+
+                upcoming = &amp;next
+
+                break</span>
+        }
+
+        <span class="cov0" title="0">return &amp;BMKGAnalysis{
+                Current:  current,
+                Upcoming: upcoming,
+        }</span>
+}
+
+func findWeatherEndTime(
+        forecasts []entity.WeatherForecast,
+        startIndex int,
+) time.Time <span class="cov0" title="0">{
+        currentWeather := forecasts[startIndex].Weather
+
+        for i := startIndex + 1; i &lt; len(forecasts); i++ </span><span class="cov0" title="0">{
+                if forecasts[i].Weather != currentWeather </span><span class="cov0" title="0">{
+                        return forecasts[i].ForecastTime
+                }</span>
+        }
+
+        <span class="cov0" title="0">return forecasts[len(forecasts)-1].ForecastTime</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package service
+
+import (
+        "log/slog"
+        "time"
+
+        "github.com/manciniraka/urbioxe/external/bmkg"
+        "github.com/manciniraka/urbioxe/internal/constant"
+        "github.com/manciniraka/urbioxe/internal/dto"
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/logger"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type BMKGService interface {
+        SyncForecasts() (*dto.SyncForecastResponse, error)
+        GetAllWeather() (*dto.WeatherListResult, error)
+        GetWeatherDetailsByDistrictID(districtID uint) (*dto.WeatherSummaryResponse, error)
+        GetMyWeather(userID uint) (*dto.WeatherSummaryResponse, error)
+}
+
+type bmkgService struct {
+        db           *gorm.DB
+        bmkgClient   *bmkg.Client
+        bmkgRepo     repository.BMKGRepository
+        districtRepo repository.DistrictRepository
+        userRepo     repository.UserRepository
+}
+
+func NewBMKGService(
+        db *gorm.DB,
+        bmkgClient *bmkg.Client,
+        bmkgRepo repository.BMKGRepository,
+        districtRepo repository.DistrictRepository,
+        userRepo repository.UserRepository,
+) BMKGService <span class="cov0" title="0">{
+        return &amp;bmkgService{
+                db:           db,
+                bmkgClient:   bmkgClient,
+                bmkgRepo:     bmkgRepo,
+                districtRepo: districtRepo,
+                userRepo:     userRepo,
+        }
+}</span>
+
+func (bs *bmkgService) SyncForecasts() (*dto.SyncForecastResponse, error) <span class="cov0" title="0">{
+        districts, err := bs.districtRepo.GetAll()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">successCount := 0
+        failedCount := 0
+
+        for _, district := range districts </span><span class="cov0" title="0">{
+                logger.Log.Info(
+                        "district loaded",
+                        "name", district.Name,
+                        "adm4", district.BMKGADM4Code,
+                )
+
+                forecasts, err := bs.bmkgClient.GetForecast(district.BMKGADM4Code)
+                if err != nil </span><span class="cov0" title="0">{
+                        failedCount++
+
+                        logger.Log.Error(
+                                "failed to fetch BMKG forecast",
+                                "tag", constant.LogTagBMKG,
+                                "district", district.Name,
+                                "adm4", district.BMKGADM4Code,
+                                "error", err,
+                        )
+
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">var weatherForecasts []entity.WeatherForecast
+
+                for _, forecast := range forecasts </span><span class="cov0" title="0">{
+
+                        weatherForecasts = append(
+                                weatherForecasts,
+                                entity.WeatherForecast{
+                                        DistrictID:   district.ID,
+                                        ForecastTime: forecast.ForecastTime,
+                                        Temperature:  forecast.Temperature,
+                                        Humidity:     forecast.Humidity,
+                                        Weather:      forecast.Weather,
+                                },
+                        )
+                }</span>
+
+                <span class="cov0" title="0">err = bs.db.Transaction(
+                        func(tx *gorm.DB) error </span><span class="cov0" title="0">{
+
+                                if err := bs.bmkgRepo.DeleteForecastsByDistrictTx(
+                                        tx,
+                                        district.ID,
+                                ); err != nil </span><span class="cov0" title="0">{
+                                        return err
+                                }</span>
+
+                                <span class="cov0" title="0">if err := bs.bmkgRepo.SaveForecastsTx(
+                                        tx,
+                                        weatherForecasts,
+                                ); err != nil </span><span class="cov0" title="0">{
+                                        return err
+                                }</span>
+
+                                <span class="cov0" title="0">return nil</span>
+                        },
+                )
+
+                <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                        failedCount++
+
+                        logger.Log.Error(
+                                "failed to save weather forecast",
+                                "tag", constant.LogTagBMKG,
+                                "district", district.Name,
+                                "adm4", district.BMKGADM4Code,
+                                "error", err,
+                        )
+
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">successCount++</span>
+        }
+
+        <span class="cov0" title="0">logger.Log.Info(
+                "BMKG forecast synchronization completed",
+                slog.String("tag", constant.LogTagBMKG),
+                slog.Int("success", successCount),
+                slog.Int("failed", failedCount),
+        )
+
+        return &amp;dto.SyncForecastResponse{
+                Success: successCount,
+                Failed:  failedCount,
+                Total:   len(districts),
+        }, nil</span>
+}
+
+func (bs *bmkgService) GetAllWeather() (*dto.WeatherListResult, error) <span class="cov0" title="0">{
+        districts, err := bs.districtRepo.GetAll()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">var weatherList []dto.WeatherListResponse
+
+        var latestForecast string
+
+        for _, district := range districts </span><span class="cov0" title="0">{
+                forecasts, err := bs.bmkgRepo.GetForecastByDistrictID(district.ID)
+                if err != nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">analysis := AnalyzeForecast(forecasts)
+                if analysis == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">if latestForecast == "" </span><span class="cov0" title="0">{
+                        latestForecast = analysis.Current.StartTime.Format(
+                                "2006-01-02 15:04 WIB",
+                        )
+                }</span>
+
+                <span class="cov0" title="0">weatherList = append(
+                        weatherList,
+                        dto.WeatherListResponse{
+                                District:    district.Name,
+                                Weather:     analysis.Current.Weather,
+                                Temperature: analysis.Current.Temperature,
+                                Humidity:    analysis.Current.Humidity,
+                        },
+                )</span>
+        }
+
+        <span class="cov0" title="0">return &amp;dto.WeatherListResult{
+                Metadata: dto.WeatherListMetadata{
+                        ForecastTime: latestForecast,
+                },
+                Data: weatherList,
+        }, nil</span>
+}
+
+func (bs *bmkgService) GetWeatherDetailsByDistrictID(districtID uint) (*dto.WeatherSummaryResponse, error) <span class="cov0" title="0">{
+        district, err := bs.districtRepo.GetByID(districtID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">forecasts, err := bs.bmkgRepo.GetForecastByDistrictID(districtID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">analysis := AnalyzeForecast(forecasts)
+        if analysis == nil </span><span class="cov0" title="0">{
+                return nil, errs.ErrWeatherNotFound
+        }</span>
+
+        <span class="cov0" title="0">now := time.Now()
+
+        var timeline []dto.ForecastTimelineResponse
+
+        forecastDate := ""
+
+        for _, item := range forecasts </span><span class="cov0" title="0">{
+                forecastTime := item.ForecastTime
+
+                if forecastTime.Before(now) </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">if !sameDay(forecastTime, now) </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">timeline = append(
+                        timeline,
+                        dto.ForecastTimelineResponse{
+                                Time:        forecastTime.Format("15:04"),
+                                Weather:     item.Weather,
+                                Temperature: item.Temperature,
+                                Humidity:    item.Humidity,
+                        },
+                )</span>
+        }
+
+        <span class="cov0" title="0">if len(timeline) == 0 </span><span class="cov0" title="0">{
+                nextDay := now.AddDate(
+                        0,
+                        0,
+                        1,
+                )
+
+                for _, item := range forecasts </span><span class="cov0" title="0">{
+                        forecastTime := item.ForecastTime
+
+                        if !sameDay(
+                                forecastTime,
+                                nextDay,
+                        ) </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+
+                        <span class="cov0" title="0">timeline = append(
+                                timeline,
+                                dto.ForecastTimelineResponse{
+                                        Time:        forecastTime.Format("15:04"),
+                                        Weather:     item.Weather,
+                                        Temperature: item.Temperature,
+                                        Humidity:    item.Humidity,
+                                },
+                        )
+
+                        if forecastDate == "" </span><span class="cov0" title="0">{
+                                forecastDate = forecastTime.Format("Monday, 02 January 2006")
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">return &amp;dto.WeatherSummaryResponse{
+                District:     district.Name,
+                ForecastDate: forecastDate,
+                Current: dto.CurrentWeatherResponse{
+                        Weather:     analysis.Current.Weather,
+                        Temperature: analysis.Current.Temperature,
+                        Humidity:    analysis.Current.Humidity,
+                        ValidUntil: analysis.Current.EndTime.
+                                Format("15:04"),
+                },
+
+                Forecast: timeline,
+        }, nil</span>
+}
+
+func sameDay(a, b time.Time) bool <span class="cov0" title="0">{
+        return a.Year() == b.Year() &amp;&amp;
+                a.Month() == b.Month() &amp;&amp;
+                a.Day() == b.Day()
+}</span>
+
+func (bs *bmkgService) GetMyWeather(userID uint) (*dto.WeatherSummaryResponse, error) <span class="cov0" title="0">{
+        user, err := bs.userRepo.GetByID(
+                userID,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">if user.HomeDistrictID == nil </span><span class="cov0" title="0">{
+                return nil, errs.ErrHomeDistrictNotSet
+        }</span>
+
+        <span class="cov0" title="0">return bs.GetWeatherDetailsByDistrictID(*user.HomeDistrictID)</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package service
+
+import (
+        "errors"
+
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type CategoryService interface {
+        GetAllCategories(isOnlyActive bool) ([]entity.Category, error)
+        GetCategoryByID(id uint) (*entity.Category, error)
+        CreateCategory(role string, input CreateCategoryInput) (*entity.Category, error)
+        UpdateCategory(id uint, role string, input UpdateCategoryInput) (*entity.Category, error)
+        ToggleCategoryStatus(id uint, role string, input ToggleCategoryStatusInput) error
+}
+
+type categoryService struct {
+        repo repository.CategoryRepository
+}
+
+func NewCategoryService(repo repository.CategoryRepository) CategoryService <span class="cov8" title="1">{
+        return &amp;categoryService{
+                repo: repo,
+        }
+}</span>
+
+type CreateCategoryInput struct {
+        DepartmentID uint   `json:"department_id"`
+        Name         string `json:"name"`
+        Description  string `json:"description"`
+}
+
+type UpdateCategoryInput struct {
+        DepartmentID uint   `json:"department_id"`
+        Name         string `json:"name"`
+        Description  string `json:"description"`
+}
+
+type ToggleCategoryStatusInput struct {
+        IsActive bool `json:"is_active"`
+}
+
+func (cs *categoryService) GetAllCategories(isOnlyActive bool) ([]entity.Category, error) <span class="cov8" title="1">{
+        return cs.repo.FindAll(isOnlyActive)
+}</span>
+
+func (cs *categoryService) GetCategoryByID(id uint) (*entity.Category, error) <span class="cov8" title="1">{
+        category, err := cs.repo.FindByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, errs.ErrCategoryNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov8" title="1">return category, nil</span>
+}
+
+func (cs *categoryService) CreateCategory(role string, input CreateCategoryInput) (*entity.Category, error) <span class="cov8" title="1">{
+        if role != "super_admin" &amp;&amp; role != "department_admin" </span><span class="cov8" title="1">{
+                return nil, errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">if input.DepartmentID == 0 </span><span class="cov0" title="0">{
+                return nil, errors.New("department_id required")
+        }</span>
+        <span class="cov8" title="1">if input.Name == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("category name required")
+        }</span>
+
+        <span class="cov8" title="1">exists, err := cs.repo.CheckNameExistsInDepartment(input.DepartmentID, input.Name, 0)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if exists </span><span class="cov8" title="1">{
+                return nil, errs.ErrCategoryAlreadyExists
+        }</span>
+
+        <span class="cov8" title="1">category := entity.Category{
+                DepartmentID: input.DepartmentID,
+                Name:         input.Name,
+                Description:  input.Description,
+                IsActive:     true,
+        }
+
+        err = cs.repo.Create(&amp;category)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;category, nil</span>
+}
+
+func (cs *categoryService) UpdateCategory(id uint, role string, input UpdateCategoryInput) (*entity.Category, error) <span class="cov8" title="1">{
+        if role != "super_admin" &amp;&amp; role != "department_admin" </span><span class="cov8" title="1">{
+                return nil, errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">category, err := cs.repo.FindByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, errs.ErrCategoryNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">if input.DepartmentID == 0 </span><span class="cov0" title="0">{
+                return nil, errors.New("department_id required")
+        }</span>
+        <span class="cov8" title="1">if input.Name == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("category name required")
+        }</span>
+
+        <span class="cov8" title="1">exists, err := cs.repo.CheckNameExistsInDepartment(input.DepartmentID, input.Name, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if exists </span><span class="cov8" title="1">{
+                return nil, errs.ErrCategoryAlreadyExists
+        }</span>
+
+        <span class="cov8" title="1">category.Department = nil
+        category.DepartmentID = input.DepartmentID
+        category.Name = input.Name
+        category.Description = input.Description
+
+        err = cs.repo.Update(category)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">updatedCategory, err := cs.repo.FindByID(category.ID)
+        if err != nil </span><span class="cov0" title="0">{
+            return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return updatedCategory, nil</span>
+}
+
+func (cs *categoryService) ToggleCategoryStatus(id uint, role string, input ToggleCategoryStatusInput) error <span class="cov8" title="1">{
+        if role != "super_admin" &amp;&amp; role != "department_admin" </span><span class="cov0" title="0">{
+                return errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">_, err := cs.repo.FindByID(id)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrCategoryNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">return cs.repo.UpdateStatus(id, input.IsActive)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package service
+
+import (
+        "errors"
+
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type DepartmentInput struct {
+        Code        string `json:"code"`
+        Name        string `json:"name"`
+        Description string `json:"description"`
+}
+
+type ToggleDepartmentStatusInput struct {
+        IsActive bool `json:"is_active"`
+}
+
+type DepartmentService interface {
+        GetAllDepartments(isOnlyActive bool) ([]entity.Department, error)
+        GetDepartmentByID(id uint) (*entity.Department, error)
+        CreateDepartment(role string, input DepartmentInput) (*entity.Department, error)
+        UpdateDepartment(id uint, role string, input DepartmentInput) (*entity.Department, error)
+        ToggleDepartmentStatus(id uint, role string, input ToggleDepartmentStatusInput) error
+}
+
+type departmentService struct {
+        repo repository.DepartmentRepository
+}
+
+func NewDepartmentService(repo repository.DepartmentRepository) DepartmentService <span class="cov8" title="1">{
+        return &amp;departmentService{
+                repo: repo,
+        }
+}</span>
+
+func (ds *departmentService) GetAllDepartments(isOnlyActive bool) ([]entity.Department, error) <span class="cov8" title="1">{
+        return ds.repo.FindAll(isOnlyActive)
+}</span>
+
+func (ds *departmentService) GetDepartmentByID(id uint) (*entity.Department, error) <span class="cov8" title="1">{
+        dept, err := ds.repo.FindByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, errs.ErrDepartmentNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov8" title="1">return dept, nil</span>
+}
+
+func (ds *departmentService) CreateDepartment(role string, input DepartmentInput) (*entity.Department, error) <span class="cov8" title="1">{
+        if role != "super_admin" </span><span class="cov8" title="1">{
+                return nil, errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">if input.Code == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("departement code required")
+        }</span>
+        <span class="cov8" title="1">if input.Name == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("departement name required")
+        }</span>
+
+        <span class="cov8" title="1">exists, err := ds.repo.CheckCodeOrNameExists(input.Code, input.Name, 0)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if exists </span><span class="cov8" title="1">{
+                return nil, errors.New("department code or name already used")
+        }</span>
+
+        <span class="cov8" title="1">dept := entity.Department{
+                Code:        input.Code,
+                Name:        input.Name,
+                Description: input.Description,
+                IsActive:    true,
+        }
+
+        err = ds.repo.Create(&amp;dept)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;dept, nil</span>
+}
+
+func (ds *departmentService) UpdateDepartment(id uint, role string, input DepartmentInput) (*entity.Department, error) <span class="cov8" title="1">{
+        if role != "super_admin" </span><span class="cov0" title="0">{
+                return nil, errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">dept, err := ds.repo.FindByID(id)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errs.ErrDepartmentNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">if input.Code == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("departement code required")
+        }</span>
+        <span class="cov8" title="1">if input.Name == "" </span><span class="cov0" title="0">{
+                return nil, errors.New("departement name required")
+        }</span>
+
+        <span class="cov8" title="1">exists, err := ds.repo.CheckCodeOrNameExists(input.Code, input.Name, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if exists </span><span class="cov0" title="0">{
+                return nil, errors.New("department code or name already used")
+        }</span>
+
+        <span class="cov8" title="1">dept.Code = input.Code
+        dept.Name = input.Name
+        dept.Description = input.Description
+
+        err = ds.repo.Update(dept)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return dept, nil</span>
+}
+
+func (ds *departmentService) ToggleDepartmentStatus(id uint, role string, input ToggleDepartmentStatusInput) error <span class="cov8" title="1">{
+        if role != "super_admin" </span><span class="cov0" title="0">{
+                return errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">_, err := ds.repo.FindByID(id)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrDepartmentNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">return ds.repo.UpdateStatus(id, input.IsActive)</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package service
+
+import (
+        "errors"
+
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/repository"
+)
+
+type DistrictService interface {
+        GetAllDistrict() ([]entity.District, error)
+        GetDistrictByID(id uint) (*entity.District, error)
+        CreateDistrict(input CreateDistrictInput) (*entity.District, error)
+        UpdateDistrict(id uint, input UpdateDistrictInput) (*entity.District, error)
+}
+
+type districtService struct {
+        districtRepo repository.DistrictRepository
+}
+
+func NewDistrictService(
+        districtRepo repository.DistrictRepository,
+) DistrictService <span class="cov8" title="1">{
+
+        return &amp;districtService{
+                districtRepo: districtRepo,
+        }
+}</span>
+
+type CreateDistrictInput struct {
+        BMKGADM4Code string `json:"bmkg_adm4_code" validate:"required"`
+        Name string `json:"name" validate:"required"`
+}
+
+type UpdateDistrictInput struct {
+        IsActive bool `json:"is_active"`
+}
+
+func (ds *districtService) GetAllDistrict() ([]entity.District, error) <span class="cov8" title="1">{
+        return ds.districtRepo.GetAll()
+}</span>
+
+func (ds *districtService) GetDistrictByID(id uint) (*entity.District, error) <span class="cov8" title="1">{
+        return ds.districtRepo.GetByID(id)
+}</span>
+
+func (ds *districtService) CreateDistrict(input CreateDistrictInput) (*entity.District, error) <span class="cov8" title="1">{
+        existing, err := ds.districtRepo.GetByName(
+                input.Name,
+        )
+
+        if err == nil &amp;&amp; existing != nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrDistrictAlreadyExists
+        }</span>
+
+        <span class="cov8" title="1">if err != nil &amp;&amp;
+                !errors.Is(err, errs.ErrDistrictNotFound) </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">district := entity.District{
+            BMKGADM4Code: input.BMKGADM4Code,
+                Name: input.Name,
+        }
+
+        if err := ds.districtRepo.Create(
+                &amp;district,
+        ); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;district, nil</span>
+}
+
+func (ds *districtService) UpdateDistrict(id uint, input UpdateDistrictInput) (*entity.District, error) <span class="cov8" title="1">{
+        district, err := ds.districtRepo.GetByID(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">district.IsActive = input.IsActive
+
+        if err := ds.districtRepo.Update(district); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return district, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package service
+
+import (
+        "errors"
+
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type EmergencyService interface {
+        GetAll() ([]entity.EmergencyContact, error)
+        GetByID(id uint) (*entity.EmergencyContact, error)
+        Create(input CreateEmergencyInput) (*entity.EmergencyContact, error)
+        Update(id uint, input UpdateEmergencyInput) (*entity.EmergencyContact, error)
+}
+
+type emergencyService struct {
+        emergencyRepo repository.EmergencyRepository
+}
+
+func NewEmergencyService(
+        emergencyRepo repository.EmergencyRepository,
+) EmergencyService <span class="cov8" title="1">{
+        return &amp;emergencyService{
+                emergencyRepo: emergencyRepo,
+        }
+}</span>
+
+type CreateEmergencyInput struct {
+        DepartmentID *uint   `json:"department_id"`
+        DistrictID   *uint   `json:"district_id"`
+        Name         string  `json:"name" validate:"required,min=3,max=100"`
+        PhoneNumber  string  `json:"phone_number" validate:"required,min=3,max=15"`
+        Description  *string `json:"description"`
+        IconURL      *string `json:"icon_url"`
+        IsActive     bool    `json:"is_active"`
+}
+
+type UpdateEmergencyInput struct {
+        DepartmentID *uint   `json:"department_id"`
+        DistrictID   *uint   `json:"district_id"`
+        Name         string  `json:"name" validate:"required,min=3,max=100"`
+        PhoneNumber  string  `json:"phone_number" validate:"required,min=3,max=15"`
+        Description  *string `json:"description"`
+        IconURL      *string `json:"icon_url"`
+        IsActive     bool    `json:"is_active"`
+}
+
+func (s *emergencyService) GetAll() ([]entity.EmergencyContact, error) <span class="cov8" title="1">{
+        return s.emergencyRepo.GetAll()
+}</span>
+
+func (s *emergencyService) GetByID(id uint) (*entity.EmergencyContact, error) <span class="cov8" title="1">{
+        emergency, err := s.emergencyRepo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, errs.ErrEmergencyContactNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">return emergency, nil</span>
+}
+
+func (s *emergencyService) Create(
+        input CreateEmergencyInput,
+) (*entity.EmergencyContact, error) <span class="cov8" title="1">{
+
+        emergency := entity.EmergencyContact{
+                DepartmentID: input.DepartmentID,
+                DistrictID:   input.DistrictID,
+                Name:         input.Name,
+                PhoneNumber:  input.PhoneNumber,
+                Description:  input.Description,
+                IconURL:      input.IconURL,
+                IsActive:     input.IsActive,
+        }
+
+        if err := s.emergencyRepo.Create(&amp;emergency); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;emergency, nil</span>
+}
+
+func (s *emergencyService) Update(
+        id uint,
+        input UpdateEmergencyInput,
+) (*entity.EmergencyContact, error) <span class="cov8" title="1">{
+
+        emergency, err := s.emergencyRepo.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, errs.ErrEmergencyContactNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">emergency.DepartmentID = input.DepartmentID
+        emergency.DistrictID = input.DistrictID
+        emergency.Name = input.Name
+        emergency.PhoneNumber = input.PhoneNumber
+        emergency.Description = input.Description
+        emergency.IconURL = input.IconURL
+        emergency.IsActive = input.IsActive
+
+        if err := s.emergencyRepo.Update(emergency); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return emergency, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package service
+
+import (
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "github.com/manciniraka/urbioxe/internal/validator"
+)
+
+type CreateNewsInput struct {
+        DepartmentID *int64              `json:"department_id"`
+        DistrictID   *int64              `json:"district_id,omitempty"`
+        Title        string              `json:"title"`
+        Content      string              `json:"content"`
+        Category     entity.NewsCategory `json:"category"`
+        BannerURL    *string             `json:"banner_url"`
+        TargetScope  entity.NewsScope    `json:"target_scope"`
+        IsPinned     bool                `json:"is_pinned"`
+}
+
+type UpdateNewsInput struct {
+        DepartmentID *int64              `json:"department_id"`
+        DistrictID   *int64              `json:"district_id,omitempty"`
+        Title        string              `json:"title"`
+        Content      string              `json:"content"`
+        Category     entity.NewsCategory `json:"category"`
+        BannerURL    *string             `json:"banner_url"`
+        TargetScope  entity.NewsScope    `json:"target_scope"`
+        IsPinned     bool                `json:"is_pinned"`
+}
+
+type NewsService interface {
+        GetAll() ([]entity.RegionalNews, error)
+        GetByID(id int64) (*entity.RegionalNews, error)
+        Create(
+                createdBy int64,
+                input CreateNewsInput,
+        ) (*entity.RegionalNews, error)
+        Update(
+                id int64,
+                input UpdateNewsInput,
+        ) (*entity.RegionalNews, error)
+        Delete(id int64) error
+}
+
+type newsService struct {
+        newsRepository repository.NewsRepository
+}
+
+func NewNewsService(
+        newsRepository repository.NewsRepository,
+) NewsService <span class="cov8" title="1">{
+        return &amp;newsService{
+                newsRepository: newsRepository,
+        }
+}</span>
+
+func (s *newsService) GetAll() ([]entity.RegionalNews, error) <span class="cov8" title="1">{
+        return s.newsRepository.GetAll()
+}</span>
+
+func (s *newsService) GetByID(
+        id int64,
+) (*entity.RegionalNews, error) <span class="cov8" title="1">{
+        return s.newsRepository.GetByID(id)
+}</span>
+
+func (s *newsService) Create(
+        createdBy int64,
+        input CreateNewsInput,
+) (*entity.RegionalNews, error) <span class="cov8" title="1">{
+        news := &amp;entity.RegionalNews{
+                DepartmentID: input.DepartmentID,
+                DistrictID:   input.DistrictID,
+                Title:        input.Title,
+                Content:      input.Content,
+                Category:     input.Category,
+                BannerURL:    input.BannerURL,
+                TargetScope:  input.TargetScope,
+                IsPinned:     input.IsPinned,
+                CreatedBy:    &amp;createdBy,
+        }
+
+        if err := validator.ValidateCreateNews(&amp;entity.CreateNewsRequest{
+                DepartmentID: input.DepartmentID,
+                DistrictID:   input.DistrictID,
+                Title:        input.Title,
+                Content:      input.Content,
+                Category:     input.Category,
+                BannerURL:    input.BannerURL,
+                TargetScope:  input.TargetScope,
+                IsPinned:     input.IsPinned,
+        }); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if err := s.newsRepository.Create(news); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return news, nil</span>
+}
+
+func (s *newsService) Update(
+        id int64,
+        input UpdateNewsInput,
+) (*entity.RegionalNews, error) <span class="cov8" title="1">{
+        news, err := s.newsRepository.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrNewsNotFound
+        }</span>
+
+        <span class="cov8" title="1">news.DepartmentID = input.DepartmentID
+        news.DistrictID = input.DistrictID
+        news.Title = input.Title
+        news.Content = input.Content
+        news.Category = input.Category
+        news.BannerURL = input.BannerURL
+        news.TargetScope = input.TargetScope
+        news.IsPinned = input.IsPinned
+
+        if err := s.newsRepository.Update(news); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return news, nil</span>
+}
+
+func (s *newsService) Delete(
+        id int64,
+) error <span class="cov8" title="1">{
+        _, err := s.newsRepository.GetByID(id)
+        if err != nil </span><span class="cov8" title="1">{
+                return errs.ErrNewsNotFound
+        }</span>
+        <span class="cov8" title="1">return s.newsRepository.Delete(id)</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package service
+
+import (
+        "errors"
+        "fmt"
+        "math/rand"
+        "mime/multipart"
+        "time"
+
+        "github.com/manciniraka/urbioxe/external/cloudinary"
+        "github.com/manciniraka/urbioxe/external/mailjet"
+        "github.com/manciniraka/urbioxe/internal/constant"
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/logger"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type ReportService interface {
+        CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*ReportResponse, error)
+        GetAllReports(param GetReportsParam) (*ReportListResponse, error)
+        GetReportByID(reportID uint, userID uint, role string) (*ReportResponse, error)
+        UpdateReport(reportID uint, userID uint, input UpdateReportInput) (*ReportResponse, error)
+        AssignReport(reportID uint, adminUserID uint, role string, input AssignReportInput) error
+        StartReport(reportID uint, officerUserID uint, role string, notes string) error
+        ResolveReport(reportID uint, officerUserID uint, role string, notes string, files []*multipart.FileHeader) error
+        RejectReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error
+        VerifyReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error
+        UpdatePriority(reportID uint, adminUserID uint, role string, input UpdatePriorityInput) error
+        ReassignReport(reportID uint, adminUserID uint, role string, input ReassignReportInput) error
+}
+
+type reportService struct {
+        repo      repository.ReportRepository
+        staffRepo repository.StaffRepository
+        cldSvc    cloudinary.CloudinaryService
+        mailer    *mailjet.Client
+}
+
+func NewReportService(
+        reportRepo repository.ReportRepository,
+        staffRepo repository.StaffRepository,
+        cldSvc cloudinary.CloudinaryService,
+        mailer *mailjet.Client,
+) ReportService <span class="cov8" title="1">{
+        return &amp;reportService{
+                repo:      reportRepo,
+                staffRepo: staffRepo,
+                cldSvc:    cldSvc,
+                mailer:    mailer,
+        }
+}</span>
+
+type GetReportsParam struct {
+        UserID     uint
+        Role       string
+        DistrictID uint
+        Status     string
+        Page       int
+        Limit      int
+}
+
+type UserReportResponse struct {
+        ID    uint   `json:"id"`
+        Name  string `json:"name"`
+        Email string `json:"email"`
+}
+
+type ReportResponse struct {
+        ID              uint                      `json:"id"`
+        Title           string                    `json:"title"`
+        Description     string                    `json:"description"`
+        AddressLandmark string                    `json:"address_landmark"`
+        Status          entity.ReportStatus       `json:"status"`
+        Priority        entity.ReportPriority     `json:"priority"`
+        CreatedAt       time.Time                 `json:"created_at"`
+        User            *UserReportResponse       `json:"user,omitempty"`
+        Category        *entity.Category          `json:"category,omitempty"`
+        Attachments     []entity.ReportAttachment `json:"attachments,omitempty"`
+        Histories       []entity.ReportHistory    `json:"histories,omitempty"`
+}
+
+type ReportListResponse struct {
+        Data      []entity.Report `json:"data"`
+        TotalData int64           `json:"total_data"`
+        Page      int             `json:"page"`
+        Limit     int             `json:"limit"`
+        TotalPage int             `json:"total_page"`
+}
+
+type UpdateReportInput struct {
+        Title              string   `json:"title"`
+        Description        string   `json:"description"`
+        AddressLandmark    string   `json:"address_landmark"`
+        CategoryID         uint     `json:"category_id"`
+        IncidentDistrictID uint     `json:"incident_district_id"`
+        Latitude           *float64 `json:"latitude"`
+        Longitude          *float64 `json:"longitude"`
+}
+
+type AssignReportInput struct {
+        StaffID uint   `json:"staff_id"`
+        Notes   string `json:"notes"`
+}
+
+type UpdateStatusReportInput struct {
+        Notes string `json:"notes"`
+}
+
+type UpdatePriorityInput struct {
+        Priority entity.ReportPriority `json:"priority"`
+        Notes    string                `json:"notes"`
+}
+
+type ReassignReportInput struct {
+        NewStaffID uint   `json:"new_staff_id"`
+        Notes      string `json:"notes"`
+}
+
+// helper
+func ToReportResponse(r *entity.Report) *ReportResponse <span class="cov8" title="1">{
+        var userResp *UserReportResponse
+        if r.User != nil </span><span class="cov8" title="1">{
+                userResp = &amp;UserReportResponse{
+                        ID:    r.User.ID,
+                        Name:  r.User.Name,
+                        Email: r.User.Email,
+                }
+        }</span>
+
+        <span class="cov8" title="1">return &amp;ReportResponse{
+                ID:              r.ID,
+                Title:           r.Title,
+                Description:     r.Description,
+                AddressLandmark: r.AddressLandmark,
+                Status:          r.Status,
+                Priority:        r.Priority,
+                CreatedAt:       r.CreatedAt,
+                User:            userResp,
+                Category:        r.Category,
+                Attachments:     r.Attachments,
+                Histories:       r.Histories,
+        }</span>
+}
+
+func GenerateReportNumber(districtID uint, categoryID uint) string <span class="cov8" title="1">{
+        now := time.Now()
+        fullTimestamp := now.Format("20060102150405")
+        randomNumber := rand.Intn(900) + 100
+        return fmt.Sprintf("REP-%s-D%03d-C%03d-%d", fullTimestamp, districtID, categoryID, randomNumber)
+}</span>
+
+// helper send email per status update
+func (rs *reportService) sendStatusEmailAsync(report *entity.Report, status string, notes string) <span class="cov8" title="1">{
+        if report != nil &amp;&amp; report.User != nil &amp;&amp; report.User.Email != "" </span><span class="cov8" title="1">{
+                go func(toEmail, toName, title string, id uint, currentStatus, currentNotes string) </span><span class="cov8" title="1">{
+                        err := rs.mailer.SendReportStatusEmail(
+                                toEmail,
+                                toName,
+                                title,
+                                id,
+                                currentStatus,
+                                currentNotes,
+                        )
+                        if err != nil </span><span class="cov0" title="0">{
+                                logger.Log.Error(
+                                        "failed to send update report email",
+                                        "tag", constant.LogTagMailjet,
+                                        "email", toEmail,
+                                        "status", currentStatus,
+                                        "error", err,
+                                )
+                        }</span>
+                }(
+                        report.User.Email,
+                        report.User.Name,
+                        report.Title,
+                        report.ID,
+                        status,
+                        notes,
+                )
+        }
+}
+
+func (rs *reportService) CreateReport(reportInput entity.Report, files []*multipart.FileHeader) (*ReportResponse, error) <span class="cov8" title="1">{
+        var attachments []entity.ReportAttachment
+
+        for _, fileHeader := range files </span><span class="cov8" title="1">{
+                secureURL, err := rs.cldSvc.UploadImage(fileHeader)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">attachments = append(attachments, entity.ReportAttachment{
+                        FileURL: secureURL,
+                        Type:    entity.TypeEvidence,
+                })</span>
+        }
+
+        <span class="cov8" title="1">reportInput.Attachments = attachments
+        reportInput.Status = entity.StatusPending
+        reportNumber := GenerateReportNumber(reportInput.IncidentDistrictID, reportInput.CategoryID)
+        reportInput.ReportNumber = &amp;reportNumber
+
+        reportInput.Histories = []entity.ReportHistory{
+                {
+                        Status:     entity.StatusPending,
+                        Notes:      "Report already created. Waiting for verification.",
+                        IsInternal: false,
+                        ActorID:    &amp;reportInput.UserID,
+                },
+        }
+
+        err := rs.repo.Create(&amp;reportInput)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">formattedDate := reportInput.CreatedAt.Format("02 January 2006 15:04 MST")
+
+        categoryName := "Umum"
+        if reportInput.Category != nil </span><span class="cov8" title="1">{
+                categoryName = reportInput.Category.Name
+        }</span>
+
+        <span class="cov8" title="1">if reportInput.User != nil &amp;&amp; reportInput.User.Email != "" </span><span class="cov8" title="1">{
+                go func(toEmail, toName string, id uint, title, category, address, dateStr string) </span><span class="cov8" title="1">{
+                        errMail := rs.mailer.SendReportCreatedEmail(
+                                toEmail,
+                                toName,
+                                id,
+                                title,
+                                category,
+                                address,
+                                dateStr,
+                        )
+                        if errMail != nil </span><span class="cov0" title="0">{
+                                logger.Log.Error(
+                                        "failed to send create report email",
+                                        "tag", constant.LogTagMailjet,
+                                        "email", toEmail,
+                                        "error", errMail,
+                                )
+                        }</span>
+                }(
+                        reportInput.User.Email,
+                        reportInput.User.Name,
+                        reportInput.ID,
+                        reportInput.Title,
+                        categoryName,
+                        reportInput.AddressLandmark,
+                        formattedDate,
+                )
+        } else<span class="cov0" title="0"> {
+                logger.Log.Error(
+                        "skip to send create report email",
+                        "tag", constant.LogTagMailjet,
+                        "email", reportInput.User.Email,
+                        "error", err,
+                )
+        }</span>
+
+        <span class="cov8" title="1">return ToReportResponse(&amp;reportInput), nil</span>
+}
+
+func (rs *reportService) GetAllReports(param GetReportsParam) (*ReportListResponse, error) <span class="cov8" title="1">{
+        if param.Page &lt;= 0 </span><span class="cov8" title="1">{
+                param.Page = 1
+        }</span>
+        <span class="cov8" title="1">if param.Limit &lt;= 0 </span><span class="cov8" title="1">{
+                param.Limit = 10
+        }</span>
+
+        <span class="cov8" title="1">offset := (param.Page - 1) * param.Limit
+
+        repoFilter := repository.ReportFilter{
+                UserID:     param.UserID,
+                Role:       param.Role,
+                DistrictID: param.DistrictID,
+                Status:     param.Status,
+                Limit:      param.Limit,
+                Offset:     offset,
+        }
+
+        if param.Role != "citizen" </span><span class="cov8" title="1">{
+                staff, err := rs.staffRepo.FindStaffByUserID(param.UserID)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">repoFilter.UserID = staff.ID</span>
+        }
+
+        <span class="cov8" title="1">reports, totalData, err := rs.repo.FindAll(repoFilter)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">totalPage := int(totalData) / param.Limit
+        if int(totalData)%param.Limit != 0 </span><span class="cov8" title="1">{
+                totalPage++
+        }</span>
+
+        <span class="cov8" title="1">return &amp;ReportListResponse{
+                Data:      reports,
+                TotalData: totalData,
+                Page:      param.Page,
+                Limit:     param.Limit,
+                TotalPage: totalPage,
+        }, nil</span>
+}
+
+func (rs *reportService) GetReportByID(reportID uint, userID uint, role string) (*ReportResponse, error) <span class="cov8" title="1">{
+        report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errs.ErrReportNotFound
+                }</span>
+                <span class="cov8" title="1">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">if role == "citizen" &amp;&amp; report.UserID != userID </span><span class="cov0" title="0">{
+                return nil, errs.ErrReportForbidden
+        }</span>
+
+        <span class="cov8" title="1">return ToReportResponse(report), nil</span>
+}
+
+func (rs *reportService) UpdateReport(reportID uint, userID uint, input UpdateReportInput) (*ReportResponse, error) <span class="cov8" title="1">{
+        existingReport, err := rs.repo.FindByID(reportID, "citizen")
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">if existingReport.UserID != userID </span><span class="cov8" title="1">{
+                return nil, errs.ErrReportForbidden
+        }</span>
+
+        <span class="cov8" title="1">if existingReport.Status != entity.StatusPending </span><span class="cov8" title="1">{
+                return nil, errs.ErrReportAlreadyInProcess
+        }</span>
+
+        <span class="cov8" title="1">if input.Title != "" </span><span class="cov8" title="1">{
+                existingReport.Title = input.Title
+        }</span>
+        <span class="cov8" title="1">if input.Description != "" </span><span class="cov0" title="0">{
+                existingReport.Description = input.Description
+        }</span>
+        <span class="cov8" title="1">if input.AddressLandmark != "" </span><span class="cov8" title="1">{
+                existingReport.AddressLandmark = input.AddressLandmark
+        }</span>
+        <span class="cov8" title="1">if input.CategoryID != 0 </span><span class="cov0" title="0">{
+                existingReport.CategoryID = input.CategoryID
+        }</span>
+        <span class="cov8" title="1">if input.IncidentDistrictID != 0 </span><span class="cov0" title="0">{
+                existingReport.IncidentDistrictID = input.IncidentDistrictID
+        }</span>
+        <span class="cov8" title="1">if input.Latitude != nil </span><span class="cov0" title="0">{
+                existingReport.Latitude = input.Latitude
+        }</span>
+        <span class="cov8" title="1">if input.Longitude != nil </span><span class="cov0" title="0">{
+                existingReport.Longitude = input.Longitude
+        }</span>
+
+        <span class="cov8" title="1">err = rs.repo.Update(existingReport)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return ToReportResponse(existingReport), nil</span>
+}
+
+func (rs *reportService) AssignReport(reportID uint, adminUserID uint, role string, input AssignReportInput) error <span class="cov8" title="1">{
+        if role != "department_admin" &amp;&amp; role != "super_admin" </span><span class="cov8" title="1">{
+                return errs.ErrReportAssignForbidden
+        }</span>
+
+        <span class="cov8" title="1">if input.StaffID == 0 </span><span class="cov8" title="1">{
+                return errors.New("staff_id required")
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if report.AssignedStaffID != nil || report.Status == entity.StatusAssigned </span><span class="cov0" title="0">{
+                return errs.ErrReportAlreadyAssigned
+        }</span>
+
+        <span class="cov8" title="1">if report.Status == entity.StatusInProgress </span><span class="cov0" title="0">{
+                return errs.ErrReportAlreadyInProcess
+        }</span>
+
+        <span class="cov8" title="1">if report.Status == entity.StatusResolved || report.Status == entity.StatusRejected </span><span class="cov0" title="0">{
+                return errs.ErrReportAlreadyResolved
+        }</span>
+
+        <span class="cov8" title="1">notes := input.Notes
+        if notes == "" </span><span class="cov0" title="0">{
+                notes = "Report already assigned to field officer."
+        }</span>
+
+        <span class="cov8" title="1">err = rs.repo.AssignStaff(reportID, input.StaffID, adminUserID, notes)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">rs.sendStatusEmailAsync(report, string(entity.StatusAssigned), notes)
+
+        return nil</span>
+}
+
+func (rs *reportService) StartReport(reportID uint, officerUserID uint, role string, notes string) error <span class="cov8" title="1">{
+        if role != "officer" &amp;&amp; role != "super_admin" </span><span class="cov0" title="0">{
+                return errs.ErrReportUpdateForbidden
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">staff, err := rs.staffRepo.FindStaffByUserID(officerUserID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if role == "officer" </span><span class="cov8" title="1">{
+                if report.AssignedStaffID == nil </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotAssigned
+                }</span>
+
+                <span class="cov8" title="1">if staff.ID != *report.AssignedStaffID </span><span class="cov8" title="1">{
+                        return errs.ErrReportUpdateForbidden
+                }</span>
+        }
+
+        <span class="cov8" title="1">if report.Status != entity.StatusAssigned </span><span class="cov0" title="0">{
+                if report.Status == entity.StatusInProgress </span><span class="cov0" title="0">{
+                        return errs.ErrReportAlreadyInProcess
+                }</span>
+                <span class="cov0" title="0">return errs.ErrReportNotAssigned</span>
+        }
+
+        <span class="cov8" title="1">if notes == "" </span><span class="cov0" title="0">{
+                notes = "Officer start handle the report"
+        }</span>
+
+        <span class="cov8" title="1">err = rs.repo.UpdateStatusWithHistory(
+                reportID,
+                entity.StatusInProgress,
+                officerUserID,
+                notes,
+                false,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">rs.sendStatusEmailAsync(report, string(entity.StatusInProgress), notes)
+
+        return nil</span>
+}
+
+func (rs *reportService) ResolveReport(reportID uint, officerUserID uint, role string, notes string, files []*multipart.FileHeader) error <span class="cov8" title="1">{
+        if role != "officer" &amp;&amp; role != "super_admin" </span><span class="cov0" title="0">{
+                return errs.ErrReportUpdateForbidden
+        }</span>
+
+        <span class="cov8" title="1">if len(files) == 0 </span><span class="cov8" title="1">{
+                return errors.New("upload minimal 1 image")
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">staff, err := rs.staffRepo.FindStaffByUserID(officerUserID)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if role == "officer" </span><span class="cov8" title="1">{
+                if report.AssignedStaffID == nil </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotAssigned
+                }</span>
+
+                <span class="cov8" title="1">if staff.ID != *report.AssignedStaffID </span><span class="cov0" title="0">{
+                        return errs.ErrReportUpdateForbidden
+                }</span>
+        }
+
+        <span class="cov8" title="1">if report.Status != entity.StatusInProgress </span><span class="cov0" title="0">{
+                return errs.ErrReportShouldInProcess
+        }</span>
+
+        <span class="cov8" title="1">var resolutionAttachments []entity.ReportAttachment
+        for _, fileHeader := range files </span><span class="cov8" title="1">{
+                secureURL, err := rs.cldSvc.UploadImage(fileHeader)
+                if err != nil </span><span class="cov0" title="0">{
+                        return errors.New("failed upload image: " + err.Error())
+                }</span>
+
+                <span class="cov8" title="1">resolutionAttachments = append(resolutionAttachments, entity.ReportAttachment{
+                        FileURL: secureURL,
+                        Type:    entity.TypeResolution,
+                })</span>
+        }
+
+        <span class="cov8" title="1">if notes == "" </span><span class="cov0" title="0">{
+                notes = "Report mark as solved by officer"
+        }</span>
+
+        <span class="cov8" title="1">err = rs.repo.ResolveReport(reportID, officerUserID, notes, resolutionAttachments)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">rs.sendStatusEmailAsync(report, string(entity.StatusResolved), notes)
+        return nil</span>
+}
+
+func (rs *reportService) RejectReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error <span class="cov8" title="1">{
+        if role != "department_admin" &amp;&amp; role != "super_admin" </span><span class="cov8" title="1">{
+                return errs.ErrReportUpdateForbidden
+        }</span>
+
+        <span class="cov8" title="1">if input.Notes == "" </span><span class="cov0" title="0">{
+                return errors.New("notes required!")
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if report.Status == entity.StatusInProgress </span><span class="cov0" title="0">{
+                return errs.ErrReportAlreadyInProcess
+        }</span>
+        <span class="cov8" title="1">if report.Status == entity.StatusResolved </span><span class="cov0" title="0">{
+                return errs.ErrReportAlreadyResolved
+        }</span>
+        <span class="cov8" title="1">if report.Status == entity.StatusRejected </span><span class="cov0" title="0">{
+                return errs.ErrReportAlreadyRejected
+        }</span>
+
+        <span class="cov8" title="1">err = rs.repo.UpdateStatusWithHistory(
+                reportID,
+                entity.StatusRejected,
+                adminUserID,
+                input.Notes,
+                false,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">rs.sendStatusEmailAsync(report, string(entity.StatusRejected), input.Notes)
+        return nil</span>
+}
+
+func (rs *reportService) VerifyReport(reportID uint, adminUserID uint, role string, input UpdateStatusReportInput) error <span class="cov8" title="1">{
+        if role != "department_admin" &amp;&amp; role != "super_admin" </span><span class="cov8" title="1">{
+                return errs.ErrReportUpdateForbidden
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if report.Status != entity.StatusPending </span><span class="cov8" title="1">{
+                return errs.ErrReportShouldPending
+        }</span>
+
+        <span class="cov8" title="1">notes := input.Notes
+        if notes == "" </span><span class="cov0" title="0">{
+                notes = "Report already verified by admin and it's valid."
+        }</span>
+
+        <span class="cov8" title="1">err = rs.repo.UpdateStatusWithHistory(reportID, entity.StatusVerified, adminUserID, notes, false)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">rs.sendStatusEmailAsync(report, string(entity.StatusVerified), notes)
+
+        return nil</span>
+}
+
+func (rs *reportService) UpdatePriority(reportID uint, adminUserID uint, role string, input UpdatePriorityInput) error <span class="cov8" title="1">{
+        if role != "department_admin" &amp;&amp; role != "super_admin" </span><span class="cov8" title="1">{
+                return errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">if input.Priority == "" </span><span class="cov0" title="0">{
+                return errors.New("report priority required")
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">oldPriority := report.Priority
+
+        notes := fmt.Sprintf("Priority updated from '%s' to '%s'. Notes: %s", oldPriority, input.Priority, input.Notes)
+        rs.repo.UpdatePriorityWithHistory(reportID, report.Status, input.Priority, adminUserID, notes)
+
+        return nil</span>
+}
+
+func (rs *reportService) ReassignReport(reportID uint, adminUserID uint, role string, input ReassignReportInput) error <span class="cov8" title="1">{
+        if role != "department_admin" &amp;&amp; role != "super_admin" </span><span class="cov0" title="0">{
+                return errs.ErrForbidden
+        }</span>
+
+        <span class="cov8" title="1">if input.NewStaffID == 0 </span><span class="cov8" title="1">{
+                return errors.New("staff id required")
+        }</span>
+
+        <span class="cov8" title="1">report, err := rs.repo.FindByID(reportID, role)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return errs.ErrReportNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if report.AssignedStaffID == nil </span><span class="cov8" title="1">{
+                return errs.ErrReportNotAssigned
+        }</span>
+
+        <span class="cov8" title="1">oldStaffID := *report.AssignedStaffID
+        if oldStaffID == input.NewStaffID </span><span class="cov0" title="0">{
+                return errors.New("report already assigned to this staff")
+        }</span>
+
+        <span class="cov8" title="1">notes := fmt.Sprintf("Report handling is transfered from Staff ID #%d to Staff ID #%d. Notes: %s", oldStaffID, input.NewStaffID, input.Notes)
+
+        err = rs.repo.AssignStaff(reportID, input.NewStaffID, adminUserID, notes)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">updatedReport, _ := rs.repo.FindByID(reportID, role)
+        rs.sendStatusEmailAsync(updatedReport, string(entity.StatusAssigned), notes)
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package service
+
+import (
+        "errors"
+        "fmt"
+        "time"
+
+        "github.com/manciniraka/urbioxe/external/mailjet"
+        "github.com/manciniraka/urbioxe/internal/constant"
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/helper"
+        "github.com/manciniraka/urbioxe/internal/logger"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type StaffService interface {
+        CreateStaff(input CreateStaffInput) (*entity.StaffProfile, error)
+        GetAllStaff() ([]StaffSummary, error)
+        GetStaffByID(id uint) (*StaffDetail, error)
+        UpdateStaff(id uint, input UpdateStaffInput) (*entity.StaffProfile, error)
+}
+
+type staffService struct {
+        db        *gorm.DB
+        staffRepo repository.StaffRepository
+        userRepo  repository.UserRepository
+        departmentRepo repository.DepartmentRepository
+        mailer    *mailjet.Client
+}
+
+func NewStaffService(
+        db *gorm.DB,
+        staffRepo repository.StaffRepository,
+        userRepo repository.UserRepository,
+        departmentRepo repository.DepartmentRepository,
+        mailer *mailjet.Client,
+) StaffService <span class="cov8" title="1">{
+        return &amp;staffService{
+                db:        db,
+                staffRepo: staffRepo,
+                userRepo:  userRepo,
+                departmentRepo: departmentRepo,
+                mailer:    mailer,
+        }
+}</span>
+
+type CreateStaffInput struct {
+        NIK          string               `json:"nik" validate:"required,len=16"`
+        Name         string               `json:"name" validate:"required"`
+        Email        string               `json:"email" validate:"required,email"`
+        PhoneNumber  string               `json:"phone_number"`
+        DepartmentID uint                 `json:"department_id" validate:"required"`
+        Position     entity.StaffPosition `json:"position" validate:"required"`
+        JoinDate     string               `json:"join_date" validate:"required"`
+}
+
+type StaffSummary struct {
+        ID             uint                 `json:"id"`
+        EmployeeNumber string               `json:"employee_number"`
+        Name           string               `json:"name"`
+        DepartmentID   uint                 `json:"department_id"`
+        DepartmentName string               `json:"department_name"`
+        Position       entity.StaffPosition `json:"position"`
+        IsActive       bool                 `json:"is_active"`
+}
+
+type StaffDetail struct {
+        ID             uint                 `json:"id"`
+        UserID         uint                 `json:"user_id"`
+        DepartmentID   uint                 `json:"department_id"`
+        EmployeeNumber string               `json:"employee_number"`
+        NIK            string               `json:"nik"`
+        Name           string               `json:"name"`
+        Email          string               `json:"email"`
+        PhoneNumber    string               `json:"phone_number"`
+        DepartmentName string               `json:"department_name"`
+        Position       entity.StaffPosition `json:"position"`
+        JoinDate       string               `json:"join_date"`
+        IsActive       bool                 `json:"is_active"`
+}
+
+type UpdateStaffInput struct {
+        DepartmentID uint                 `json:"department_id" validate:"required"`
+        Position     entity.StaffPosition `json:"position" validate:"required"`
+        PhoneNumber  string               `json:"phone_number"`
+        IsActive     bool                 `json:"is_active"`
+}
+
+func (ss *staffService) CreateStaff(input CreateStaffInput) (*entity.StaffProfile, error) <span class="cov8" title="1">{
+        var userRole entity.UserRole
+
+        switch input.Position </span>{
+        case entity.PositionFieldOfficer:<span class="cov8" title="1">
+                userRole = entity.RoleOfficer</span>
+        case entity.PositionDepartmentAdmin:<span class="cov0" title="0">
+                userRole = entity.RoleDepartmentAdmin</span>
+        case entity.PositionSupervisor:<span class="cov0" title="0">
+                userRole = entity.RoleSuperAdmin</span>
+
+        default:<span class="cov8" title="1">
+                return nil, errs.ErrInvalidStaffPosition</span>
+        }
+
+        <span class="cov8" title="1">existingUser, err := ss.userRepo.FindByEmail(input.Email)
+        if err == nil &amp;&amp; existingUser != nil </span><span class="cov0" title="0">{
+                return nil, errs.ErrEmailRegistered
+        }</span>
+
+        <span class="cov8" title="1">if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">existingUser, err = ss.userRepo.FindByNIK(input.NIK)
+        if err == nil &amp;&amp; existingUser != nil </span><span class="cov0" title="0">{
+                return nil, errs.ErrNIKRegistered
+        }</span>
+
+        <span class="cov8" title="1">if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">department, err := ss.departmentRepo.FindByID(input.DepartmentID)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, errs.ErrDepartmentNotFound
+                }</span>
+
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">if !department.IsActive </span><span class="cov8" title="1">{
+                return nil, errs.ErrDepartmentInactive
+        }</span>
+
+        <span class="cov8" title="1">joinDate, err := time.Parse(
+                "2006-01-02",
+                input.JoinDate,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errs.ErrBadRequest
+        }</span>
+
+        <span class="cov8" title="1">lastSequence, err := ss.staffRepo.GetLastEmployeeSequence(
+                input.DepartmentID,
+                joinDate,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">employeeNumber := helper.GenerateEmployeeNumber(
+                department.Code,
+                joinDate,
+                lastSequence,
+        )
+
+        temporaryPassword, err := helper.GenerateTemporaryPassword(department.Code)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">hashedPassword, err := helper.HashPassword(temporaryPassword)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">var (
+                user  entity.User
+                staff entity.StaffProfile
+        )
+
+        err = ss.db.Transaction(
+                func(tx *gorm.DB) error </span><span class="cov8" title="1">{
+                        user = entity.User{
+                                NIK:         input.NIK,
+                                Name:        input.Name,
+                                Email:       input.Email,
+                                Password:    hashedPassword,
+                                PhoneNumber: input.PhoneNumber,
+                                Role:        userRole,
+                        }
+
+                        if err := ss.userRepo.RegisterUserTx(
+                                tx,
+                                &amp;user,
+                        ); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov8" title="1">staff = entity.StaffProfile{
+                                UserID:         user.ID,
+                                DepartmentID:   input.DepartmentID,
+                                EmployeeNumber: employeeNumber,
+                                Position:       input.Position,
+                                JoinDate:       input.JoinDate,
+                                IsActive:       true,
+                        }
+
+                        if err := ss.staffRepo.CreateStaffTx(
+                                tx,
+                                &amp;staff,
+                        ); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov8" title="1">return nil</span>
+                },
+        )
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if err := ss.mailer.SendWelcomeStaffEmail(
+                user.Name,
+                user.Email,
+                department.Name,
+                staff.EmployeeNumber,
+                temporaryPassword,
+        ); err != nil </span><span class="cov0" title="0">{
+                logger.Log.Error(
+                        "failed to send welcome staff email",
+                        "tag", constant.LogTagMailjet,
+                        "email", user.Email,
+                        "error", err,
+                )
+        }</span>
+
+        <span class="cov8" title="1">user.Password = ""
+
+        staff.User = &amp;user
+        staff.Department = department
+
+        return &amp;staff, nil</span>
+}
+
+func (ss *staffService) GetAllStaff() ([]StaffSummary, error) <span class="cov8" title="1">{
+        staffs, err := ss.staffRepo.GetAll()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">summaries := make(
+                []StaffSummary,
+                0,
+                len(staffs),
+        )
+
+        for _, staff := range staffs </span><span class="cov8" title="1">{
+
+                summaries = append(
+                        summaries,
+                        StaffSummary{
+                                ID:             staff.ID,
+                                EmployeeNumber: staff.EmployeeNumber,
+                                Name:           staff.User.Name,
+                                DepartmentID:   staff.DepartmentID,
+                                DepartmentName: staff.Department.Name,
+                                Position:       staff.Position,
+                                IsActive:       staff.IsActive,
+                        },
+                )
+        }</span>
+
+        <span class="cov8" title="1">return summaries, nil</span>
+}
+
+func (ss *staffService) GetStaffByID(id uint) (*StaffDetail, error) <span class="cov8" title="1">{
+        staff, err := ss.staffRepo.GetByID(id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">detail := &amp;StaffDetail{
+                ID:             staff.ID,
+                UserID:         staff.UserID,
+                DepartmentID:   staff.DepartmentID,
+                EmployeeNumber: staff.EmployeeNumber,
+                NIK:            staff.User.NIK,
+                Name:           staff.User.Name,
+                Email:          staff.User.Email,
+                PhoneNumber:    staff.User.PhoneNumber,
+                DepartmentName: staff.Department.Name,
+                Position:       staff.Position,
+                JoinDate:       staff.JoinDate,
+                IsActive:       staff.IsActive,
+        }
+
+        return detail, nil</span>
+}
+
+func (ss *staffService) UpdateStaff(id uint, input UpdateStaffInput) (*entity.StaffProfile, error) <span class="cov8" title="1">{
+        staff, err := ss.staffRepo.GetByID(
+                id,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">var department entity.Department
+
+        err = ss.db.
+                First( // TODO(INTEGRATION): Replace direct query with DepartmentRepository after Department module has been merged.
+                        &amp;department,
+                        input.DepartmentID,
+                ).Error
+
+        if err != nil </span><span class="cov0" title="0">{
+
+                if errors.Is(
+                        err,
+                        gorm.ErrRecordNotFound,
+                ) </span><span class="cov0" title="0">{
+                        return nil, errs.ErrDepartmentNotFound
+                }</span>
+
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">var userRole entity.UserRole
+
+        switch input.Position </span>{
+
+        case entity.PositionFieldOfficer:<span class="cov0" title="0">
+                userRole = entity.RoleOfficer</span>
+
+        case entity.PositionDepartmentAdmin:<span class="cov8" title="1">
+                userRole = entity.RoleDepartmentAdmin</span>
+
+        case entity.PositionSupervisor:<span class="cov0" title="0">
+                userRole = entity.RoleSuperAdmin</span>
+
+        default:<span class="cov0" title="0">
+                return nil, errs.ErrInvalidStaffPosition</span>
+        }
+
+        <span class="cov8" title="1">err = ss.db.Transaction(
+                func(tx *gorm.DB) error </span><span class="cov8" title="1">{
+
+                        staff.User.PhoneNumber = input.PhoneNumber
+                        staff.User.Role = userRole
+
+                        if err := ss.userRepo.UpdateUserTx(
+                                tx,
+                                staff.User,
+                        ); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov8" title="1">staff.DepartmentID = input.DepartmentID
+                        staff.Position = input.Position
+                        staff.IsActive = input.IsActive
+
+                        fmt.Printf("%+v\n", input)
+                        fmt.Printf("%+v\n", staff.DepartmentID)
+
+                        if err := ss.staffRepo.UpdateStaffTx(
+                                tx,
+                                staff,
+                        ); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov8" title="1">return nil</span>
+                },
+        )
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">staff, err = ss.staffRepo.GetByID(
+                id,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return staff, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package service
+
+import (
+        "errors"
+
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/helper"
+        "github.com/manciniraka/urbioxe/internal/repository"
+        "gorm.io/gorm"
+)
+
+type UserService interface {
+        GetProfile(userID uint) (*entity.User, error)
+        UpdateProfile(userID uint, input UpdateProfileInput) (*entity.User, error)
+        ChangePassword(userID uint, input ChangePasswordInput) error
+}
+
+type userService struct {
+        userRepo repository.UserRepository
+        districtRepo repository.DistrictRepository
+}
+
+func NewUserService(
+        userRepo repository.UserRepository,
+        districtRepo repository.DistrictRepository,
+) UserService <span class="cov8" title="1">{
+        return &amp;userService{
+                userRepo: userRepo,
+                districtRepo: districtRepo,
+        }
+}</span>
+
+type UpdateProfileInput struct {
+        Name           string `json:"name" validate:"required,min=3,max=100"`
+        PhoneNumber    string `json:"phone_number" validate:"required,min=9,max=15,numeric"`
+        HomeDistrictID *uint  `json:"home_district_id"`
+}
+
+type ChangePasswordInput struct {
+        OldPassword string `json:"old_password" validate:"required"`
+        NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
+func (s *userService) GetProfile(userID uint) (*entity.User, error) <span class="cov8" title="1">{
+        user, err := s.userRepo.GetByID(userID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">user.Password = ""
+
+        return user, nil</span>
+}
+
+func (s *userService) UpdateProfile(userID uint, input UpdateProfileInput) (*entity.User, error) <span class="cov8" title="1">{
+        user, err := s.userRepo.GetByID(userID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">if input.HomeDistrictID != nil </span><span class="cov8" title="1">{
+                district, err := s.districtRepo.GetByID(*input.HomeDistrictID)
+                if err != nil </span><span class="cov8" title="1">{
+                        if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                                return nil, errs.ErrDistrictNotFound
+                        }</span>
+                        <span class="cov0" title="0">return nil, err</span>
+                }
+        
+                <span class="cov8" title="1">if !district.IsActive </span><span class="cov8" title="1">{
+                        return nil, errs.ErrDistrictInactive
+                }</span>
+        }
+
+        <span class="cov8" title="1">user.Name = input.Name
+        user.PhoneNumber = input.PhoneNumber
+        user.HomeDistrictID = input.HomeDistrictID
+
+        err = s.userRepo.UpdateProfile(user)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">user.Password = ""
+
+        return user, nil</span>
+}
+
+func (s *userService) ChangePassword(userID uint, input ChangePasswordInput) error <span class="cov8" title="1">{
+        user, err := s.userRepo.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return errs.ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">err = helper.ComparePassword(
+                user.Password,
+                input.OldPassword,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return errs.ErrInvalidCredential
+        }</span>
+
+        <span class="cov8" title="1">if input.OldPassword == input.NewPassword </span><span class="cov8" title="1">{
+                return errs.ErrSamePassword
+        }</span>
+
+        <span class="cov8" title="1">hashedPassword, err := helper.HashPassword(
+                input.NewPassword,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">err = s.userRepo.UpdatePassword(
+                userID,
+                hashedPassword,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package service
+
+import (
+        "fmt"
+        "mime/multipart"
+        "time"
+
+        "github.com/manciniraka/urbioxe/external/cloudinary"
+        "github.com/manciniraka/urbioxe/internal/config"
+        "github.com/manciniraka/urbioxe/internal/dto"
+        "github.com/manciniraka/urbioxe/internal/entity"
+        "github.com/manciniraka/urbioxe/internal/errs"
+        "github.com/manciniraka/urbioxe/internal/repository"
+)
+
+type WaterService interface {
+        CreateWaterStatus(userID uint, input dto.CreateWaterStatusInput) (*dto.WaterStatusResponse, error)
+        GetAllWaterStatus() (*dto.WaterListResult, error)
+        GetWaterStatusByDistrictID(districtID uint) (*dto.WaterStatusResponse, error)
+        GetMyWaterStatus(userID uint) (*dto.WaterStatusResponse, error)
+        GetWaterStatusHistories() ([]dto.WaterHistoryResponse, error)
+
+        SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error)
+        CreateMeterReading(
+                userID uint,
+                input dto.CreateMeterReadingInput,
+                fileHeader *multipart.FileHeader,
+        ) (*dto.MeterReadingResponse, error)
+        GetMyMeterReadings(userID uint) ([]dto.MeterReadingHistoryResponse, error)
+        GetAllMeterReadings(month *int, year *int) ([]dto.MeterReadingHistoryResponse, error)
+}
+
+
+type waterService struct {
+        waterRepo repository.WaterRepository
+        districtRepo repository.DistrictRepository
+        userRepo repository.UserRepository
+
+        meterReadingRepo repository.MeterReadingRepository
+    cloudinaryService cloudinary.CloudinaryService
+}
+
+func NewWaterService(
+        waterRepo repository.WaterRepository,
+        districtRepo repository.DistrictRepository,
+        userRepo repository.UserRepository,
+        meterReadingRepo repository.MeterReadingRepository,
+    cloudinaryService cloudinary.CloudinaryService,
+) WaterService <span class="cov8" title="1">{
+        return &amp;waterService{
+                waterRepo: waterRepo,
+                districtRepo: districtRepo,
+                userRepo: userRepo,
+                meterReadingRepo: meterReadingRepo,
+                cloudinaryService: cloudinaryService,
+        }
+}</span>
+
+func (ws *waterService) CreateWaterStatus(userID uint, input dto.CreateWaterStatusInput) (*dto.WaterStatusResponse, error) <span class="cov8" title="1">{
+        district, err := ws.districtRepo.GetByID(
+                input.DistrictID,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">location, _ := time.LoadLocation("Asia/Jakarta")
+
+        var startedAt time.Time
+        var estimatedRecoveryAt time.Time
+        var estimatedDuration int
+
+        if input.Status != entity.WaterStatusNormal </span><span class="cov8" title="1">{
+                startedAt, err = time.ParseInLocation(
+                        "2006-01-02 15:04",
+                        input.StartedAt,
+                        location,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">now := time.Now().In(location)
+
+                if startedAt.Before(now) </span><span class="cov8" title="1">{
+                        return nil, errs.ErrStartedAtBeforeNow
+                }</span>
+
+                <span class="cov8" title="1">estimatedDuration = input.EstimatedDuration
+
+                estimatedRecoveryAt = startedAt.Add(
+                        time.Duration(estimatedDuration) * time.Hour,
+                )</span>
+        }
+
+        <span class="cov8" title="1">waterStatus := entity.WaterStatus{
+                DistrictID:           input.DistrictID,
+                Status:               input.Status,
+                StartedAt:            startedAt,
+                EstimatedDuration:    input.EstimatedDuration,
+                EstimatedRecoveryAt:  estimatedRecoveryAt,
+                Reason:               input.Reason,
+                CreatedBy:            userID,
+        }
+
+        err = ws.waterRepo.CreateWaterStatus(&amp;waterStatus)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">response := dto.WaterStatusResponse{
+                District: district.Name,
+                Status: waterStatus.Status,
+                StartedAt: waterStatus.
+                        StartedAt.
+                        In(location).
+                        Format("02 Jan 2006 15:04 WIB"),
+                EstimatedRecovery: waterStatus.
+                        EstimatedRecoveryAt.
+                        In(location).
+                        Format("02 Jan 2006 15:04 WIB"),
+                EstimatedDuration: waterStatus.EstimatedDuration,
+                Reason: waterStatus.Reason,
+        }
+
+        return &amp;response, nil</span>
+}
+
+func (ws *waterService) GetAllWaterStatus() (*dto.WaterListResult, error) <span class="cov8" title="1">{
+        statuses, err := ws.waterRepo.GetLatestAllWaterStatus()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">location, _ := time.LoadLocation(
+                "Asia/Jakarta",
+        )
+
+        var result dto.WaterListResult
+
+        for _, status := range statuses </span><span class="cov8" title="1">{
+
+                item := dto.WaterListItem{
+                        District: status.District.Name,
+                        Status:   status.Status,
+                }
+
+                if status.Status != entity.WaterStatusNormal </span><span class="cov8" title="1">{
+                        startedAt := status.
+                                StartedAt.
+                                In(location).
+                                Format("02 Jan 2006 15:04 WIB")
+
+                        item.StartedAt = &amp;startedAt
+                }</span>
+
+                <span class="cov8" title="1">result.Data = append(
+                        result.Data,
+                        item,
+                )
+
+                if result.Metadata.UpdatedAt == "" </span><span class="cov8" title="1">{
+                        result.Metadata.UpdatedAt = status.CreatedAt.
+                        In(location).
+                        Format(
+                                "02 Jan 2006 15:04 WIB",
+                        )
+                }</span>
+        }
+
+        <span class="cov8" title="1">return &amp;result, nil</span>
+}
+
+func (ws *waterService) GetWaterStatusByDistrictID(districtID uint) (*dto.WaterStatusResponse, error) <span class="cov8" title="1">{
+        status, err := ws.waterRepo.GetLatestWaterStatusByDistrictID(districtID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">location, _ := time.LoadLocation(
+                "Asia/Jakarta",
+        )
+
+        response := dto.WaterStatusResponse{
+                District: status.District.Name,
+                Status: status.Status,
+                StartedAt: status.StartedAt.
+                        In(location).
+                        Format("02 Jan 2006 15:04 WIB"),
+                EstimatedRecovery: status.
+                        EstimatedRecoveryAt.
+                        In(location).
+                        Format("02 Jan 2006 15:04 WIB"),
+                EstimatedDuration: status.EstimatedDuration,
+                Reason: status.Reason,
+        }
+
+        return &amp;response, nil</span>
+}
+
+func (ws *waterService) GetMyWaterStatus(userID uint) (*dto.WaterStatusResponse, error) <span class="cov8" title="1">{
+        user, err := ws.userRepo.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if user.HomeDistrictID == nil </span><span class="cov8" title="1">{
+                return nil, errs.ErrDistrictNotFound
+        }</span>
+
+        <span class="cov8" title="1">return ws.GetWaterStatusByDistrictID(
+                *user.HomeDistrictID,
+        )</span>
+}
+
+func (ws *waterService) GetWaterStatusHistories() ([]dto.WaterHistoryResponse,        error) <span class="cov8" title="1">{
+        histories, err := ws.waterRepo.GetWaterStatusHistories()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">location, _ := time.LoadLocation(
+                "Asia/Jakarta",
+        )
+
+        var responses []dto.WaterHistoryResponse
+
+        for _, history := range histories </span><span class="cov8" title="1">{
+                response := dto.WaterHistoryResponse{
+                        District: history.District.Name,
+                        Status: history.Status,
+                        Reason: history.Reason,
+                        CreatedBy: history.User.Name,
+                        CreatedAt: history.
+                                CreatedAt.
+                                In(location).
+                                Format("02 Jan 2006 15:04 WIB"),
+                }
+
+                if history.Status != entity.WaterStatusNormal </span><span class="cov8" title="1">{
+                        startedAt := history.
+                                StartedAt.
+                                In(location).
+                                Format("02 Jan 2006 15:04 WIB")
+                        estimatedRecovery := history.
+                                EstimatedRecoveryAt.
+                                In(location).
+                                Format("02 Jan 2006 15:04 WIB")
+                        estimatedDuration := history.EstimatedDuration
+                        response.StartedAt = &amp;startedAt
+                        response.EstimatedRecovery = &amp;estimatedRecovery
+                        response.EstimatedDuration = &amp;estimatedDuration
+                }</span>
+
+                <span class="cov8" title="1">responses = append(
+                        responses,
+                        response,
+                )</span>
+        }
+
+        <span class="cov8" title="1">return responses, nil</span>
+}
+
+func (ws *waterService) SimulateBill(input dto.BillSimulationRequest) (*dto.BillSimulationResponse, error) <span class="cov8" title="1">{
+        tariff, err := config.GetWaterTariff(input.TariffGroup)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">usage := input.Usage
+
+        billableUsage := usage
+
+        if billableUsage &lt; tariff.MinimumUsage </span><span class="cov0" title="0">{
+                billableUsage = tariff.MinimumUsage
+        }</span>
+
+        <span class="cov0" title="0">totalBill := 0
+
+        var breakdown []dto.BillBreakdown
+
+        remaining := billableUsage
+
+        for _, block := range tariff.Blocks </span><span class="cov0" title="0">{
+                if remaining &lt;= 0 </span><span class="cov0" title="0">{
+                        break</span>
+                }
+
+                <span class="cov0" title="0">blockCapacity := 0
+
+                if block.To == -1 </span><span class="cov0" title="0">{
+                        blockCapacity = remaining
+                }</span> else<span class="cov0" title="0"> {
+                        blockCapacity = block.To - block.From + 1
+
+                        if remaining &lt; blockCapacity </span><span class="cov0" title="0">{
+                                blockCapacity = remaining
+                        }</span>
+                }
+
+                <span class="cov0" title="0">subtotal := blockCapacity * block.PricePerM3
+
+                rangeLabel := ""
+
+                if block.To == -1 </span><span class="cov0" title="0">{
+
+                        rangeLabel = fmt.Sprintf(
+                                "%d+",
+                                block.From,
+                        )
+
+                }</span> else<span class="cov0" title="0"> {
+
+                        rangeLabel = fmt.Sprintf(
+                                "%d-%d",
+                                block.From,
+                                block.To,
+                        )
+                }</span>
+
+                <span class="cov0" title="0">breakdown = append(
+                        breakdown,
+                        dto.BillBreakdown{
+                                Range: rangeLabel,
+                                Usage: blockCapacity,
+                                PricePerM3: block.PricePerM3,
+                                Subtotal: subtotal,
+                        },
+                )
+                totalBill += subtotal
+                remaining -= blockCapacity</span>
+        }
+
+        <span class="cov0" title="0">return &amp;dto.BillSimulationResponse{
+                TariffGroup: tariff.Code,
+                TariffName: tariff.Name,
+                Usage: usage,
+                MinimumUsage: tariff.MinimumUsage,
+                BillableUsage: billableUsage,
+                TotalBill: totalBill,
+                Breakdown: breakdown,
+        }, nil</span>
+}
+
+func (ws *waterService) CreateMeterReading(
+        userID uint,
+        input dto.CreateMeterReadingInput,
+        fileHeader *multipart.FileHeader,
+) (*dto.MeterReadingResponse, error) <span class="cov8" title="1">{
+        location, _ := time.LoadLocation(
+                "Asia/Jakarta",
+        )
+
+        photoURL, err := ws.cloudinaryService.UploadImage(fileHeader)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">meterReading := entity.MeterReading{
+                UserID: userID,
+                CustomerNumber: input.CustomerNumber,
+                CurrentReading: input.CurrentReading,
+                PhotoURL: photoURL,
+                Status: entity.MeterReadingPending,
+        }
+
+        err = ws.meterReadingRepo.CreateMeterReading(&amp;meterReading)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">response := dto.MeterReadingResponse{
+                CustomerNumber: meterReading.CustomerNumber,
+                CurrentReading: meterReading.CurrentReading,
+                PhotoURL: meterReading.PhotoURL,
+                Status: meterReading.Status,
+                SubmittedAt: meterReading.
+                        CreatedAt.
+                        In(location).
+                        Format("02 Jan 2006 15:04 WIB"),
+        }
+
+        return &amp;response, nil</span>
+}
+
+func (ws *waterService) GetMyMeterReadings(userID uint) ([]dto.MeterReadingHistoryResponse, error) <span class="cov8" title="1">{
+        location, _ := time.LoadLocation(
+                "Asia/Jakarta",
+        )
+        
+        meterReadings, err := ws.meterReadingRepo.GetMyMeterReadings(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
+
+        for _, meterReading := range meterReadings </span><span class="cov8" title="1">{
+                response = append(response, dto.MeterReadingHistoryResponse{
+                        ID:             meterReading.ID,
+                        CustomerNumber: meterReading.CustomerNumber,
+                        CurrentReading: meterReading.CurrentReading,
+                        PhotoURL:       meterReading.PhotoURL,
+                        Status:         meterReading.Status,
+                        SubmittedAt: meterReading.CreatedAt.
+                                In(location).
+                                Format("02 Jan 2006 15:04 WIB"),
+                })
+        }</span>
+
+        <span class="cov8" title="1">return response, nil</span>
+}
+
+func (ws *waterService) GetAllMeterReadings(month *int, year *int) ([]dto.MeterReadingHistoryResponse, error) <span class="cov8" title="1">{
+        location, _ := time.LoadLocation(
+                "Asia/Jakarta",
+        )
+        
+        meterReadings, err := ws.meterReadingRepo.GetAllMeterReadings(month, year)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">response := make([]dto.MeterReadingHistoryResponse, 0, len(meterReadings))
+
+        for _, meterReading := range meterReadings </span><span class="cov8" title="1">{
+                response = append(response, dto.MeterReadingHistoryResponse{
+                        ID:             meterReading.ID,
+                        CustomerNumber: meterReading.CustomerNumber,
+                        CurrentReading: meterReading.CurrentReading,
+                        PhotoURL:       meterReading.PhotoURL,
+                        Status:         meterReading.Status,
+                        SubmittedAt: meterReading.CreatedAt.
+                                In(location).
+                                Format("02 Jan 2006 15:04 WIB"),
+                })
+        }</span>
+
+        <span class="cov8" title="1">return response, nil</span>
+}</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
