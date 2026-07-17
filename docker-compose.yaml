@@ -1,0 +1,11 @@
+services:
+  urbioxe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urbioxe_service_app
+    env_file:
+      - .env
+    ports:
+      - "8029:8080"
+    restart: always
